@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: week1-micro-pipeline
+Version: 0.1.0
+Requires-Python: >=3.10
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: ruff; extra == "dev"
+Requires-Dist: mypy; extra == "dev"
+Requires-Dist: types-requests; extra == "dev"
