@@ -23,11 +23,11 @@ def build_steps():
         PromptStep(),
         RepairJsonStep(),
         ScoreStep(),
+        GradeStep(),
         DecideStep(),
         ReaskStep(),
-        RepairJsonStep(),  # re-validate after reask if it happened
+        RepairJsonStep(),   # only matters if reask overwrote raw_output
         ScoreStep(),
-        DecideStep(),
         GradeStep(),
         ChooseBestStep(),
         ExplainDecisionStep(),
