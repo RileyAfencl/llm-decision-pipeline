@@ -12,6 +12,10 @@ from pipeline.clients.llm_client import (
 
 class RepairJsonStep(PipelineStep):
     name = "repair_json"
+    reads = {"raw_output"}
+    writes = {"parsed", "validated", "repaired", "raw_output_repaired"}
+    deletes = {"raw_output_repaired"}  # because you __delete__ it on valid path
+
 
     # Repair is another LLM call => transient failures possible
     retry_config = RetryConfig(

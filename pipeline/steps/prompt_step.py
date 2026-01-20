@@ -6,6 +6,9 @@ from pipeline.clients.llm_client import run_llm, SYSTEM_JSON_ANALYST
 
 class PromptStep(PipelineStep):
     name = "prompt"
+    reads = {"question"}
+    writes = {"raw_output"}
+
 
     # LLM calls are network-bound → retries make sense
     retry_config = RetryConfig(

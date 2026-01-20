@@ -10,6 +10,8 @@ from pipeline.clients.llm_client import (
 
 class GradeStep(PipelineStep):
     name = "grade"
+    reads = {"question", "validated"}
+    writes = {"grade"}
 
     retry_config = RetryConfig(
         attempts=4,

@@ -25,16 +25,13 @@ def main() -> None:
     ScoreStep(),
     GradeStep(),
     DecideStep(),
-
     ReaskStep(),          # may overwrite raw_output and clear derived fields
-
     RepairJsonStep(),     # recompute from overwritten raw_output
     ScoreStep(),
     GradeStep(),
     DecideStep(),
     ChooseBestStep(),
     ExplainDecisionStep(),
-    GradeStep(),
 ]
     result = run_pipeline(steps, initial_data)
 

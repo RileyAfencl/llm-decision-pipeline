@@ -3,6 +3,9 @@ from pipeline.steps.base import PipelineStep
 
 class ExplainDecisionStep(PipelineStep):
     name = "explain_decision"
+    reads = {"reasked", "score", "attempt1", "best"}
+    writes = {"decision_reason"}
+
 
     def run(self, input_data: dict) -> dict:
         reasked = input_data.get("reasked", False)

@@ -5,6 +5,10 @@ from pipeline.clients.llm_client import run_llm, SYSTEM_JSON_ANALYST_REASK
 
 class ReaskStep(PipelineStep):
     name = "reask"
+    reads = {"question", "action"}  # it checks action and reads question
+    writes = {"reasked", "reask_count", "attempt1", "original_raw_output", "raw_output"}
+    deletes = {"parsed", "validated", "score", "action", "grade", "repaired", "raw_output_repaired"}
+
 
     retry_config = RetryConfig(
         attempts=4,
