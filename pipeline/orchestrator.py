@@ -1,6 +1,6 @@
 from __future__ import annotations
 import time
-from typing import Iterable
+from typing import Iterable, Set
 import uuid
 from pipeline.steps.base import PipelineStep
 from pipeline.utils.logger import get_logger
@@ -22,6 +22,24 @@ REQUIRES_BEFORE: dict[str, tuple[str, ...]] = {
     "explain_decision": ("best",),       # if your step depends on best
 }
 
+def preflight_validate(steps: Iterable[PipelineStep], initial_data: dict) -> None:
+    available: Set[str] = set(initial_data.keys())
+
+    # Orchestrator injects these before the first step runs
+    available.update({"run_id", "pipeline_version", "env", "model"})
+
+    for step in steps:
+        missing = set(step.reads) - available
+        if missing:
+            raise InvariantViolation(
+                step=step.name,
+                missing_keys=tuple(sorted(missing)),
+                message="Preflight failed: step requires keys not available yet.",
+            )
+
+        # apply declared deletes/writes to the available-key set
+        available -= set(step.deletes)
+        available |= set(step.writes)
 
 def run_pipeline(steps: Iterable[PipelineStep], initial_data: dict) -> dict:
     run_id = str(uuid.uuid4())
@@ -33,6 +51,8 @@ def run_pipeline(steps: Iterable[PipelineStep], initial_data: dict) -> dict:
         "model": CONFIG.default_model,
         }
     logger.info(f"Starting pipeline run_id={run_id} version={PIPELINE_VERSION} env={CONFIG.env}")
+    preflight_validate(steps, data)
+    
     for step in steps:
         try:
             required = REQUIRES_BEFORE.get(step.name, ())
