@@ -5,10 +5,9 @@ from pipeline.clients.llm_client import run_llm, SYSTEM_JSON_ANALYST_REASK
 
 class ReaskStep(PipelineStep):
     name = "reask"
-    reads = {"question", "action"}  # it checks action and reads question
+    reads = {"question", "action", "raw_output", "repaired", "validated", "score", "grade"}  # it checks action and reads question
     writes = {"reasked", "reask_count", "attempt1", "original_raw_output", "raw_output"}
     deletes = {"parsed", "validated", "score", "action", "grade", "repaired", "raw_output_repaired"}
-
 
     retry_config = RetryConfig(
         attempts=4,
@@ -19,25 +18,15 @@ class ReaskStep(PipelineStep):
         retry_on=(Exception,),
     )
 
+    def when(self, data: dict) -> bool:
+        # Only run if policy says reask AND we're not past max
+        if data.get("action") != "reask":
+            return False
+        return data.get("reask_count", 0) < 1
+
     def run(self, input_data: dict) -> dict:
         # Only re-ask if policy says so
-        max_reasks = 1
-        reask_count = input_data.get("reask_count", 0)
-
-        # Hard stop: too many reasks
-        if reask_count >= max_reasks:
-            return {
-            "reasked": False,
-            "reask_blocked": True,
-            "reask_count": reask_count,
-            }
-        
-        if input_data.get("action") != "reask":
-            return {
-            "reasked": False,
-            "reask_count": reask_count,
-            }
-        
+        reask_count = input_data.get("reask_count", 0) 
         question = input_data["question"]
 
         raw2 = run_llm(
@@ -45,6 +34,7 @@ class ReaskStep(PipelineStep):
             user_prompt=question,
             temperature=0.2,
         )
+
         attempt1 = {
             "raw_output": input_data.get("raw_output"),
             "raw_output_repaired": input_data.get("raw_output_repaired"),
