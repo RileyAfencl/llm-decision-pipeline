@@ -31,6 +31,5 @@ class PromptStep(PipelineStep):
 
 
         return {
-            **input_data,
             "raw_output": raw_output,
         }

@@ -9,7 +9,7 @@ class DummyStep(PipelineStep):
     retry_config = None
 
     def run(self, input_data: dict) -> dict:
-        return {**input_data, "dummy_ran": True}
+        return {"dummy_ran": True}
 
 
 def test_invariant_violation_returns_structured_error() -> None:
@@ -20,7 +20,7 @@ def test_invariant_violation_returns_structured_error() -> None:
         retry_config = None
 
         def run(self, input_data: dict) -> dict:
-            return {**input_data, "raw_output": "x"}
+            return {"raw_output": "x"}
 
     result = run_pipeline([PromptLike()], initial_data={})
 
@@ -38,7 +38,7 @@ def test_pipeline_runs_step_when_invariants_satisfied() -> None:
         retry_config = None
 
         def run(self, input_data: dict) -> dict:
-            return {**input_data, "raw_output": "ok"}
+            return {"raw_output": "ok"}
 
     result = run_pipeline([PromptLike(), DummyStep()], initial_data={"question": "hi"})
 

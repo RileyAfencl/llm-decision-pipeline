@@ -30,8 +30,8 @@ class RepairJsonStep(PipelineStep):
         try:
             parsed = parse_json_strict(raw)
             validated = validate_answer_schema(parsed)
-            return {**input_data, "parsed": parsed, "validated": validated, "repaired": False}
-        except Exception:
+            return {"parsed": parsed, "validated": validated, "repaired": False, "__delete__": ["raw_output_repaired"]}
+        except (ValueError, TypeError):
             pass  # proceed to repair
 
         repaired_text = run_llm(
@@ -44,7 +44,6 @@ class RepairJsonStep(PipelineStep):
         repaired_validated: Dict[str, Any] = validate_answer_schema(repaired_parsed)
 
         return {
-            **input_data,
             "raw_output_repaired": repaired_text,
             "parsed": repaired_parsed,
             "validated": repaired_validated,

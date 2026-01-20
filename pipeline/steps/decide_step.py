@@ -15,6 +15,5 @@ class DecideStep(PipelineStep):
             action = "reask"
 
         return {
-            **input_data,
             "action": action,
         }
