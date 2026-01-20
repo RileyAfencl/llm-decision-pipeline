@@ -64,6 +64,15 @@ def run_pipeline(steps: Iterable[PipelineStep], initial_data: dict) -> dict:
                 message="Pipeline state invalid before running this step.",
                 )
 
+            # Skip step if predicate says so (Day 18)
+            if not step.when(data):
+                logger.info(f"Skipping step: {step.name}")
+                # still record something in timings so debugging is easy
+                timings = dict(data.get("timings", {}))
+                timings[step.name] = 0.0
+                data = {**data, "timings": timings}
+                continue
+
             logger.info(f"Running step: {step.name}")
             start = time.perf_counter()
 
@@ -93,6 +102,16 @@ def run_pipeline(steps: Iterable[PipelineStep], initial_data: dict) -> dict:
                     "steps should return updates only."
                 )
 
+            allowed_keys = set(step.writes) | {"__delete__"}
+            extra_keys = set(updates.keys()) - allowed_keys
+            if extra_keys:
+                raise InvariantViolation(
+                    step=step.name,
+                    missing_keys=(),
+                    message=f"Step returned undeclared keys: {sorted(extra_keys)}. "
+                    f"Declare them in writes or remove them.",
+                )
+
             delete_keys = updates.pop("__delete__", [])
             if delete_keys:
                 if not isinstance(delete_keys, (list, tuple)):
@@ -103,9 +122,19 @@ def run_pipeline(steps: Iterable[PipelineStep], initial_data: dict) -> dict:
                     raise TypeError(
                         f"{step.__class__.__name__} __delete__ entries must be str"
                         )
-                for k in delete_keys:
+                
+            undeclared_deletes = set(delete_keys) - set(step.deletes)
+            if undeclared_deletes:
+                raise InvariantViolation(
+                    step=step.name,
+                    missing_keys=(),
+                    message=f"Step requested undeclared deletes: {sorted(undeclared_deletes)}. "
+                            f"Declare them in deletes or stop deleting them.",
+                )
+            
+            for k in delete_keys:
                     data.pop(k, None)
-
+            
             data = {**data, **updates}
                 
             elapsed = time.perf_counter() - start

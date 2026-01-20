@@ -19,3 +19,7 @@ class PipelineStep(ABC):
         Must NOT mutate input in-place.
         """
         raise NotImplementedError
+
+    def when(self, data: dict) -> bool:
+        """Return True to run this step, False to skip."""
+        return True
