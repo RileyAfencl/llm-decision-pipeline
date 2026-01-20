@@ -34,4 +34,4 @@ class ExplainDecisionStep(PipelineStep):
         else:
             reason["note"] = "Tie on confidence; kept attempt 2 by tie-break rule."
 
-        return {**input_data, "decision_reason": reason}
+        return {"decision_reason": reason}

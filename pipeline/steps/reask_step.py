@@ -23,14 +23,13 @@ class ReaskStep(PipelineStep):
         # Hard stop: too many reasks
         if reask_count >= max_reasks:
             return {
-            **input_data,
             "reasked": False,
             "reask_blocked": True,
-        }
+            "reask_count": reask_count,
+            }
         
         if input_data.get("action") != "reask":
             return {
-            **input_data,
             "reasked": False,
             "reask_count": reask_count,
             }
@@ -52,17 +51,21 @@ class ReaskStep(PipelineStep):
             "action": input_data.get("action"),
         }
 
-        out = {
-        **input_data,
-        "reasked": True,
-        "attempt1": attempt1,
-        "reask_count": reask_count + 1,
-        "original_raw_output": input_data.get("raw_output"),
-        "raw_output": raw2,
+        updates = {
+            "reasked": True,
+            "attempt1": attempt1,
+            "reask_count": reask_count + 1,
+            "original_raw_output": input_data.get("raw_output"),
+            "raw_output": raw2,
+            "__delete__": [
+                "parsed",
+                "validated",
+                "score",
+                "action",
+                "grade",
+                "repaired",
+                "raw_output_repaired",
+            ],
         }
 
-        # clear anything derived from the old raw_output
-        for k in ("parsed", "validated", "score", "action", "grade", "repaired", "raw_output_repaired"):
-            out.pop(k, None)
-
-        return out
+        return updates

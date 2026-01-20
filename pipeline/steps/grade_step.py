@@ -33,4 +33,4 @@ class GradeStep(PipelineStep):
         parsed = parse_json_strict(raw)
         graded = validate_grade_schema(parsed)
 
-        return {**input_data, "grade": graded}
+        return {"grade": graded}

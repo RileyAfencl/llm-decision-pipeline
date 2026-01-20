@@ -9,7 +9,6 @@ class ChooseBestStep(PipelineStep):
         # If no reask happened, attempt1 is the only attempt
         if not input_data.get("reasked", False):
             return {
-                **input_data,
                 "best": {
                     "chosen": "attempt1",
                     "validated": input_data.get("validated"),
@@ -49,7 +48,6 @@ class ChooseBestStep(PipelineStep):
             best_action = attempt1.get("action")
 
         return {
-            **input_data,
             "best": {
                 "chosen": chosen,
                 "validated": best_validated,

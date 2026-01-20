@@ -16,7 +16,6 @@ class ScoreStep(PipelineStep):
             tier = "low"
 
         return {
-            **input_data,
             "score": {
                 "confidence": conf,
                 "tier": tier,

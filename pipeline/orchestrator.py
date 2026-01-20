@@ -51,19 +51,48 @@ def run_pipeline(steps: Iterable[PipelineStep], initial_data: dict) -> dict:
                 return step.run(data)
             
             if step.retry_config is None:
-                data = _run_step()
+                updates = _run_step()
             else:
-                data = retry_call(
-                _run_step,
+                updates = retry_call(
+                 _run_step,
                 cfg=step.retry_config,
                 on_retry=lambda attempt, err, sleep_s, step=step: print(
-                    f"[retry] step={step.name} attempt={attempt} err={err} sleep={sleep_s:.2f}s"
-                ),
-            )
+                f"[retry] step={step.name} attempt={attempt} err={err} sleep={sleep_s:.2f}s"
+            ),
+        )
+
+            if not isinstance(updates, dict):
+                raise TypeError(
+                f"{step.__class__.__name__}.run() must return dict, got {type(updates)}"
+                )           
+
+            # Heuristic: discourage returning full state snapshots
+            if set(updates.keys()) >= set(data.keys()):
+                logger.warning(
+                    f"Step {step.name} appears to be returning full state; "
+                    "steps should return updates only."
+                )
+
+            delete_keys = updates.pop("__delete__", [])
+            if delete_keys:
+                if not isinstance(delete_keys, (list, tuple)):
+                    raise TypeError(
+                        f"{step.__class__.__name__} __delete__ must be list[str]"
+                        )
+                if not all(isinstance(k, str) for k in delete_keys):
+                    raise TypeError(
+                        f"{step.__class__.__name__} __delete__ entries must be str"
+                        )
+                for k in delete_keys:
+                    data.pop(k, None)
+
+            data = {**data, **updates}
                 
             elapsed = time.perf_counter() - start
             logger.info(f"Finished step={step.name} run_id={run_id} elapsed={elapsed:.3f}s")
-            data.setdefault("timings", {})[step.name] = elapsed
+            timings = dict(data.get("timings", {}))
+            timings[step.name] = elapsed
+            data = {**data, "timings": timings}
 
         except InvariantViolation as e:
         # structured failure payload
