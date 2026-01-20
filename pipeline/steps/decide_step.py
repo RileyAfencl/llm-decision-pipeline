@@ -3,6 +3,9 @@ from pipeline.steps.base import PipelineStep
 
 class DecideStep(PipelineStep):
     name = "decide"
+    reads = {"score"}
+    writes = {"action"}
+
 
     def run(self, input_data: dict) -> dict:
         tier = input_data["score"]["tier"]

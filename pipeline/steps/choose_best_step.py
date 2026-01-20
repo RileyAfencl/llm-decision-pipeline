@@ -4,6 +4,9 @@ from pipeline.steps.base import PipelineStep
 
 class ChooseBestStep(PipelineStep):
     name = "choose_best"
+    reads = {"reasked", "validated", "score", "action", "grade", "attempt1"}
+    writes = {"best", "validated", "score", "action"}
+
 
     def run(self, input_data: dict) -> dict:
         # If no reask happened, attempt1 is the only attempt
