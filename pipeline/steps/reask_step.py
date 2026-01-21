@@ -18,12 +18,6 @@ class ReaskStep(PipelineStep):
         retry_on=(Exception,),
     )
 
-    def when(self, data: dict) -> bool:
-        # Only run if policy says reask AND we're not past max
-        if data.get("action") != "reask":
-            return False
-        return data.get("reask_count", 0) < 1
-
     def run(self, input_data: dict) -> dict:
         # Only re-ask if policy says so
         reask_count = input_data.get("reask_count", 0) 

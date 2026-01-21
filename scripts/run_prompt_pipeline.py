@@ -9,7 +9,7 @@ from pipeline.steps.score_step import ScoreStep
 from pipeline.steps.decide_step import DecideStep
 from pathlib import Path
 from pipeline.utils.persist import persist_run
-from pipeline.steps.guards import Guard
+from pipeline.policy import SecondPassAfterReaskPolicy
 
 
 
@@ -21,9 +21,6 @@ def main() -> None:
     # break_json = input("Force malformed output? (y/N): ").strip().lower() == "y"
     break_json = False
 
-    def is_reasked(data: dict) -> bool:
-        return bool(data.get("reasked", False))
-
     initial_data = {"question": question, "break_json": break_json}
     steps = [
     PromptStep(),
@@ -32,14 +29,14 @@ def main() -> None:
     GradeStep(),
     DecideStep(),
     ReaskStep(),          # may overwrite raw_output and clear derived fields
-    Guard(RepairJsonStep(), is_reasked),
-    Guard(ScoreStep(), is_reasked),
-    Guard(GradeStep(), is_reasked),
-    Guard(DecideStep(), is_reasked),
+    RepairJsonStep(),
+    ScoreStep(),
+    GradeStep(),
+    DecideStep(),
     ChooseBestStep(),
     ExplainDecisionStep(),
 ]
-    result = run_pipeline(steps, initial_data)
+    result = run_pipeline(steps, initial_data, policy=SecondPassAfterReaskPolicy(max_reasks=1))
 
     print("\nVALIDATED OUTPUT:\n")
     print(result["validated"])
