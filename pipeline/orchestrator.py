@@ -8,6 +8,8 @@ from pipeline.utils.retry import retry_call
 from pipeline.version import PIPELINE_VERSION
 from pipeline.config import CONFIG
 from pipeline.utils.invariants import require_keys, InvariantViolation
+from pipeline.policy import DefaultPolicy, Policy, StepContext
+
 
 logger = get_logger("pipeline.orchestrator")
 
@@ -41,8 +43,10 @@ def preflight_validate(steps: Iterable[PipelineStep], initial_data: dict) -> Non
         available -= set(step.deletes)
         available |= set(step.writes)
 
-def run_pipeline(steps: Iterable[PipelineStep], initial_data: dict) -> dict:
+def run_pipeline(steps: Iterable[PipelineStep], initial_data: dict, policy: Policy | None = None) -> dict:
     run_id = str(uuid.uuid4())
+    policy = policy or DefaultPolicy()
+    name_counts: dict[str, int] = {}
     data = {
         **initial_data,
         "run_id": run_id,
@@ -53,7 +57,7 @@ def run_pipeline(steps: Iterable[PipelineStep], initial_data: dict) -> dict:
     logger.info(f"Starting pipeline run_id={run_id} version={PIPELINE_VERSION} env={CONFIG.env}")
     preflight_validate(steps, data)
     
-    for step in steps:
+    for idx, step in enumerate(steps):
         try:
             required = REQUIRES_BEFORE.get(step.name, ())
             if required:
@@ -63,11 +67,13 @@ def run_pipeline(steps: Iterable[PipelineStep], initial_data: dict) -> dict:
                 required,
                 message="Pipeline state invalid before running this step.",
                 )
+        
+            occurrence = name_counts.get(step.name, 0) + 1
+            name_counts[step.name] = occurrence
+            ctx = StepContext(step_index=idx, occurrence=occurrence)
 
-            # Skip step if predicate says so (Day 18)
-            if not step.when(data):
-                logger.info(f"Skipping step: {step.name}")
-                # still record something in timings so debugging is easy
+            if not policy.should_run(step, data, ctx):
+                logger.info(f"Skipping step: {step.name} (occurrence={occurrence})")
                 timings = dict(data.get("timings", {}))
                 timings[step.name] = 0.0
                 data = {**data, "timings": timings}
