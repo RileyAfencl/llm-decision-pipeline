@@ -1,14 +1,15 @@
 from __future__ import annotations
 import time
-from typing import Iterable, Set
+from typing import Iterable, Sequence, Set
 import uuid
+from pipeline.failure_policy import DefaultFailurePolicy, FailureMode, FailurePolicy
 from pipeline.steps.base import PipelineStep
 from pipeline.utils.logger import get_logger
 from pipeline.utils.retry import retry_call
 from pipeline.version import PIPELINE_VERSION
 from pipeline.config import CONFIG
 from pipeline.utils.invariants import require_keys, InvariantViolation
-from pipeline.policy import DefaultPolicy, Policy, StepContext
+from pipeline.policy import DefaultPolicy, Policy, StepContext, CompositePolicy
 
 
 logger = get_logger("pipeline.orchestrator")
@@ -43,9 +44,25 @@ def preflight_validate(steps: Iterable[PipelineStep], initial_data: dict) -> Non
         available -= set(step.deletes)
         available |= set(step.writes)
 
-def run_pipeline(steps: Iterable[PipelineStep], initial_data: dict, policy: Policy | None = None) -> dict:
+def run_pipeline(steps: Iterable[PipelineStep], 
+                 initial_data: dict, 
+                 policy: Policy | list[Policy] | None = None,
+                 failure_policy: FailurePolicy | None = None,
+             ) -> dict:
     run_id = str(uuid.uuid4())
-    policy = policy or DefaultPolicy()
+    if failure_policy is None:
+        failure_policy_obj: FailurePolicy = DefaultFailurePolicy()
+    else:
+        failure_policy_obj: FailurePolicy = failure_policy 
+
+    if policy is None:
+        policy_obj: Policy = DefaultPolicy()
+    elif isinstance(policy, Sequence) and not isinstance(policy, (str, bytes)):
+        # list/tuple/etc of policies
+        policy_obj = CompositePolicy(policies=policy)
+    else:
+        # single Policy
+        policy_obj = policy
     name_counts: dict[str, int] = {}
     data = {
         **initial_data,
@@ -72,7 +89,7 @@ def run_pipeline(steps: Iterable[PipelineStep], initial_data: dict, policy: Poli
             name_counts[step.name] = occurrence
             ctx = StepContext(step_index=idx, occurrence=occurrence)
 
-            if not policy.should_run(step, data, ctx):
+            if not policy_obj.should_run(step, data, ctx):
                 logger.info(f"Skipping step: {step.name} (occurrence={occurrence})")
                 timings = dict(data.get("timings", {}))
                 timings[step.name] = 0.0
@@ -165,16 +182,34 @@ def run_pipeline(steps: Iterable[PipelineStep], initial_data: dict, policy: Poli
             return data  # stop pipeline immediately 
 
         except Exception as e:
-        # generic structured failure payload
+        # # ctx may not exist if we failed before it was created; make a safe fallback
+            ctx_fallback = locals().get(
+                "ctx",
+                StepContext(
+                    step_index=idx,
+                    occurrence=name_counts.get(step.name, 0) + 1,
+                ),
+            )
+
+            decision = failure_policy_obj.on_step_failure(step, data, ctx_fallback, e)
+
+            if decision.mode != FailureMode.ABORT:
+                raise NotImplementedError(
+                    f"Failure mode {decision.mode} not implemented yet"
+                )
+
+            # ABORT (current behavior): structured failure payload + stop
             data = {
                 **data,
                 "error": {
-                "type": type(e).__name__,
-                "step": step.name,
-                "message": str(e),
+                    "type": type(e).__name__,
+                    "step": step.name,
+                    "message": decision.reason or str(e),
+                    "failure_mode": decision.mode.value, 
+                    "failure_reason": decision.reason,
                 },
-            "action": "error",
-        }
+                "action": "error",
+            }
             logger.exception(f"Step failed: {step.name}")
             return data
    
