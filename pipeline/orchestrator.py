@@ -220,6 +220,43 @@ def run_pipeline(steps: Iterable[PipelineStep],
                 logger.exception(f"Step failed (SKIP): {step.name}")
                 continue
 
+            if decision.mode == FailureMode.CONTINUE_WITH_FLAG:
+                # record failure as data and continue, but also inject a failure flag
+                failure_event = {
+                    "type": type(e).__name__,
+                    "step": step.name,
+                    "message": decision.reason or str(e),
+                    "failure_mode": decision.mode.value,   # "continue_with_flag"
+                    "failure_reason": decision.reason,
+                    "step_index": ctx_fallback.step_index,
+                    "occurrence": ctx_fallback.occurrence,
+                }
+
+                failures = list(data.get("failures", []))
+                failures.append(failure_event)
+
+                flags = dict(data.get("failure_flags", {}))
+                # If the same step can fail multiple times, last-write-wins is fine for now.
+                flags[step.name] = {
+                    "type": type(e).__name__,
+                    "reason": decision.reason or str(e),
+                    "step_index": ctx_fallback.step_index,
+                    "occurrence": ctx_fallback.occurrence,
+                }
+
+                timings = dict(data.get("timings", {}))
+                timings[step.name] = 0.0
+
+                data = {
+                    **data,
+                    "failures": failures,
+                    "failure_flags": flags,
+                    "timings": timings,
+                }
+
+                logger.exception(f"Step failed (CONTINUE_WITH_FLAG): {step.name}")
+                continue
+
             if decision.mode != FailureMode.ABORT:
                 raise NotImplementedError(
                     f"Failure mode {decision.mode} not implemented yet"
