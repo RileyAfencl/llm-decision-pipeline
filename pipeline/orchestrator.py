@@ -193,6 +193,33 @@ def run_pipeline(steps: Iterable[PipelineStep],
 
             decision = failure_policy_obj.on_step_failure(step, data, ctx_fallback, e)
 
+            if decision.mode == FailureMode.SKIP:
+                # record failure as data and continue
+                failure_event = {
+                    "type": type(e).__name__,
+                    "step": step.name,
+                    "message": decision.reason or str(e),
+                    "failure_mode": decision.mode.value,   # "skip"
+                    "failure_reason": decision.reason,
+                    "step_index": ctx_fallback.step_index,
+                    "occurrence": ctx_fallback.occurrence,
+                }
+
+                failures = list(data.get("failures", []))
+                failures.append(failure_event)
+
+                timings = dict(data.get("timings", {}))
+                timings[step.name] = 0.0
+
+                data = {
+                    **data,
+                    "failures": failures,
+                    "timings": timings,
+                }
+
+                logger.exception(f"Step failed (SKIP): {step.name}")
+                continue
+
             if decision.mode != FailureMode.ABORT:
                 raise NotImplementedError(
                     f"Failure mode {decision.mode} not implemented yet"
@@ -205,7 +232,7 @@ def run_pipeline(steps: Iterable[PipelineStep],
                     "type": type(e).__name__,
                     "step": step.name,
                     "message": decision.reason or str(e),
-                    "failure_mode": decision.mode.value, 
+                    "failure_mode": decision.mode.value,  # "abort"
                     "failure_reason": decision.reason,
                 },
                 "action": "error",
