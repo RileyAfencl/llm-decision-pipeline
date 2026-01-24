@@ -1,3 +1,4 @@
+
 from pipeline.orchestrator import run_pipeline
 from pipeline.steps.choose_best_step import ChooseBestStep
 from pipeline.steps.explain_decision_step import ExplainDecisionStep
@@ -9,7 +10,7 @@ from pipeline.steps.score_step import ScoreStep
 from pipeline.steps.decide_step import DecideStep
 from pathlib import Path
 from pipeline.utils.persist import persist_run
-from pipeline.policy import SecondPassAfterReaskPolicy
+from pipeline.policy import SecondPassAfterReaskPolicy, DefaultPolicy, CompositePolicy
 
 
 
@@ -36,7 +37,14 @@ def main() -> None:
     ChooseBestStep(),
     ExplainDecisionStep(),
 ]
-    result = run_pipeline(steps, initial_data, policy=SecondPassAfterReaskPolicy(max_reasks=1))
+   
+    policy = CompositePolicy(
+        policies=[
+        DefaultPolicy(),
+        SecondPassAfterReaskPolicy(max_reasks=1),
+     ]
+  )
+    result = run_pipeline(steps, initial_data, policy=policy)
 
     print("\nVALIDATED OUTPUT:\n")
     print(result["validated"])

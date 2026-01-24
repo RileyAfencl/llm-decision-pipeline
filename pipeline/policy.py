@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Protocol, Sequence
 
 from pipeline.steps.base import PipelineStep
 
@@ -60,3 +60,18 @@ class SecondPassAfterReaskPolicy(ReaskPolicy):
             return bool(data.get("reasked", False))
 
         return super().should_run(step, data, ctx)
+
+@dataclass(frozen=True)
+class CompositePolicy:
+    """
+    Evaluates multiple policies in order.
+    First policy to return False vetoes execution (short-circuit).
+    """
+
+    policies: Sequence[Policy]
+
+    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+        for policy in self.policies:
+            if not policy.should_run(step, data, ctx):
+                return False
+        return True
