@@ -75,3 +75,26 @@ class CompositePolicy:
             if not policy.should_run(step, data, ctx):
                 return False
         return True
+    
+
+@dataclass(frozen=True)
+class BlockIfFlaggedPolicy:
+    """
+    Veto running certain steps if specific failure flags exist in data["failure_flags"].
+
+    flagged_steps: upstream steps that, if flagged, should block downstream steps
+    blocked_steps: downstream steps to veto if any flagged upstream step exists
+    """
+
+    flagged_steps: frozenset[str]
+    blocked_steps: frozenset[str]
+
+    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+        if step.name not in self.blocked_steps:
+            return True
+
+        flags = data.get("failure_flags", {})
+        if not isinstance(flags, dict):
+            raise TypeError("failure_flags must be a dict when present")
+
+        return not any(upstream in flags for upstream in self.flagged_steps)
