@@ -44,6 +44,59 @@ def preflight_validate(steps: Iterable[PipelineStep], initial_data: dict) -> Non
         available -= set(step.deletes)
         available |= set(step.writes)
 
+def build_run_summary(data: dict, steps: Iterable[PipelineStep]) -> dict:
+    timings = data.get("timings", {}) or {}
+    failures = data.get("failures", []) or []
+    flags = data.get("failure_flags", {}) or {}
+    skipped = data.get("skipped_steps", []) or []
+    
+    error_step = None
+    if isinstance(data.get("error"), dict):
+            error_step = data["error"].get("step")
+
+    # status
+    if data.get("action") == "error":
+        status = "error"
+    elif len(failures) > 0:
+        status = "degraded"
+    else:
+        status = "success"
+
+    # step lists in declared order
+    step_names = [s.name for s in steps]
+
+    failed_set = {f.get("step") for f in failures if isinstance(f, dict)}
+    if error_step:
+        failed_set.add(error_step)
+    
+    skipped_set = set(skipped)
+
+
+    # attempted = either has timing entry OR is in failures (covers failure paths)
+    attempted = [
+    name
+    for name in step_names
+    if ((name in timings) or (name in failed_set)) and (name not in skipped_set)
+    ]
+
+    # successfully ran = attempted minus failed minus skipped
+    ran = [name for name in attempted if name not in failed_set and name not in skipped_set]
+
+    # skipped (ordered) from step list
+    skipped_ordered = [name for name in step_names if name in skipped_set]
+
+    total_time_s = sum(float(timings.get(name, 0.0)) for name in step_names)
+
+    return {
+        "status": status,
+        "attempted_steps": attempted,
+        "ran_steps": ran,
+        "skipped_steps": skipped_ordered,
+        "failures": failures,
+        "failure_flags": flags,
+        "total_time_s": total_time_s,
+    }
+
 def run_pipeline(steps: Iterable[PipelineStep], 
                  initial_data: dict, 
                  policy: Policy | list[Policy] | None = None,
@@ -93,7 +146,9 @@ def run_pipeline(steps: Iterable[PipelineStep],
                 logger.info(f"Skipping step: {step.name} (occurrence={occurrence})")
                 timings = dict(data.get("timings", {}))
                 timings[step.name] = 0.0
-                data = {**data, "timings": timings}
+                skipped = list(data.get("skipped_steps", []))
+                skipped.append(step.name)
+                data = {**data, "timings": timings, "skipped_steps": skipped}
                 continue
 
             logger.info(f"Running step: {step.name}")
@@ -179,6 +234,7 @@ def run_pipeline(steps: Iterable[PipelineStep],
             "action": "error",
         }
             logger.error(f"Invariant violation: {e}")
+            data = {**data, "run_summary": build_run_summary(data, steps)}
             return data  # stop pipeline immediately 
 
         except Exception as e:
@@ -275,6 +331,8 @@ def run_pipeline(steps: Iterable[PipelineStep],
                 "action": "error",
             }
             logger.exception(f"Step failed: {step.name}")
+            data = {**data, "run_summary": build_run_summary(data, steps)}
             return data
-   
+        
+    data = {**data, "run_summary": build_run_summary(data, steps)}
     return data
