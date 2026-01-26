@@ -16,3 +16,6 @@ build/
 # virtualenvs
 .venv/
 venv/
+
+# local run artifacts
+runs/pipeline_runs.jsonl
