@@ -11,39 +11,71 @@ class StepContext:
     step_index: int          # 0-based index in the steps list
     occurrence: int          # 1 for first time this step.name appears, 2 for second, etc.
 
+@dataclass(frozen=True)
+class ExecutionDecision:
+    run: bool
+    reason: str
+    policy: str
+
 
 class Policy(Protocol):
     """Decides whether a step is eligible to run given current pipeline state."""
+    def decide(self, step: PipelineStep, data: dict, ctx: StepContext) -> ExecutionDecision:
+        ...
 
     def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool: ...
 
 
 @dataclass(frozen=True)
 class DefaultPolicy:
-    """
-    Default behavior: defer to step.when(data).
-    This preserves current behavior while moving the decision point out of the orchestrator.
-    """
-
-    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+    def decide(self, step: PipelineStep, data: dict, ctx: StepContext) -> ExecutionDecision:
         allowed = step.when(data)
         if not isinstance(allowed, bool):
             raise TypeError(
                 f"{step.__class__.__name__}.when() must return bool, got {type(allowed)}"
             )
-        return allowed
+        return ExecutionDecision(
+            run=allowed,
+            reason="step.when(data) == True" if allowed else "step.when(data) == False",
+            policy=self.__class__.__name__,
+        )
+
+    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+        return self.decide(step, data, ctx).run
+
+
 
 @dataclass(frozen=True)
 class ReaskPolicy(DefaultPolicy):
     max_reasks: int = 1
 
-    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+    def decide(self, step: PipelineStep, data: dict, ctx: StepContext) -> ExecutionDecision:
         if step.name == "reask":
             if data.get("action") != "reask":
-                return False
-            return int(data.get("reask_count", 0)) < self.max_reasks
+                return ExecutionDecision(
+                    run=False,
+                    reason="reask blocked; action != 'reask'",
+                    policy=self.__class__.__name__,
+                )
+            count = int(data.get("reask_count", 0))
+            if count >= self.max_reasks:
+                return ExecutionDecision(
+                    run=False,
+                    reason=f"reask blocked; max_reasks reached ({count} >= {self.max_reasks})",
+                    policy=self.__class__.__name__,
+                )
+            return ExecutionDecision(
+                run=True,
+                reason="reask allowed",
+                policy=self.__class__.__name__,
+            )
 
-        return super().should_run(step, data, ctx)
+        # defer to normal step.when contract
+        return super().decide(step, data, ctx)
+
+    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+        return self.decide(step, data, ctx).run
+
     
 @dataclass(frozen=True)
 class SecondPassAfterReaskPolicy(ReaskPolicy):
@@ -54,12 +86,26 @@ class SecondPassAfterReaskPolicy(ReaskPolicy):
 
     gated_second_pass: frozenset[str] = frozenset({"repair_json", "score", "grade", "decide"})
 
-    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
-        # Gate only the *second* occurrence of these step names
+    def decide(self, step: PipelineStep, data: dict, ctx: StepContext) -> ExecutionDecision:
         if step.name in self.gated_second_pass and ctx.occurrence >= 2:
-            return bool(data.get("reasked", False))
+            reasked = bool(data.get("reasked", False))
+            if not reasked:
+                return ExecutionDecision(
+                    run=False,
+                    reason="gated second pass; reasked == False",
+                    policy=self.__class__.__name__,
+                )
+            return ExecutionDecision(
+                run=True,
+                reason="second pass allowed; reasked == True",
+                policy=self.__class__.__name__,
+            )
 
-        return super().should_run(step, data, ctx)
+        return super().decide(step, data, ctx)
+
+    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+        return self.decide(step, data, ctx).run
+
 
 @dataclass(frozen=True)
 class CompositePolicy:
@@ -70,11 +116,20 @@ class CompositePolicy:
 
     policies: Sequence[Policy]
 
-    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+    def decide(self, step: PipelineStep, data: dict, ctx: StepContext) -> ExecutionDecision:
         for policy in self.policies:
-            if not policy.should_run(step, data, ctx):
-                return False
-        return True
+            d = policy.decide(step, data, ctx)
+            if not d.run:
+                return d  # preserve original reason/policy
+        return ExecutionDecision(
+            run=True,
+            reason="all policies allowed",
+            policy=self.__class__.__name__,
+        )
+
+    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+        return self.decide(step, data, ctx).run
+
     
 
 @dataclass(frozen=True)
@@ -89,12 +144,31 @@ class BlockIfFlaggedPolicy:
     flagged_steps: frozenset[str]
     blocked_steps: frozenset[str]
 
-    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+    def decide(self, step: PipelineStep, data: dict, ctx: StepContext) -> ExecutionDecision:
         if step.name not in self.blocked_steps:
-            return True
+            return ExecutionDecision(
+                run=True,
+                reason="step not in blocked_steps",
+                policy=self.__class__.__name__,
+            )
 
         flags = data.get("failure_flags", {})
         if not isinstance(flags, dict):
             raise TypeError("failure_flags must be a dict when present")
 
-        return not any(upstream in flags for upstream in self.flagged_steps)
+        blocked_by = [s for s in self.flagged_steps if s in flags]
+        if blocked_by:
+            return ExecutionDecision(
+                run=False,
+                reason=f"blocked by failure_flags from: {', '.join(blocked_by)}",
+                policy=self.__class__.__name__,
+            )
+
+        return ExecutionDecision(
+            run=True,
+            reason="no blocking failure_flags present",
+            policy=self.__class__.__name__,
+        )
+
+    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+        return self.decide(step, data, ctx).run

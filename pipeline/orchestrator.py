@@ -48,7 +48,9 @@ def build_run_summary(data: dict, steps: Iterable[PipelineStep]) -> dict:
     timings = data.get("timings", {}) or {}
     failures = data.get("failures", []) or []
     flags = data.get("failure_flags", {}) or {}
-    skipped = data.get("skipped_steps", []) or []
+    skipped_events = data.get("skipped_steps", []) or []
+    decision_events = data.get("decision_events", []) or []
+    decision_narrative = []
     
     error_step = None
     if isinstance(data.get("error"), dict):
@@ -69,7 +71,11 @@ def build_run_summary(data: dict, steps: Iterable[PipelineStep]) -> dict:
     if error_step:
         failed_set.add(error_step)
     
-    skipped_set = set(skipped)
+    # ordered list of skipped step names for summary display
+    skipped_ordered = [ev["step"] for ev in skipped_events]
+
+    # name-only set for membership checks in existing logic
+    skipped_set = {ev["step"] for ev in skipped_events}
 
 
     # attempted = either has timing entry OR is in failures (covers failure paths)
@@ -87,6 +93,16 @@ def build_run_summary(data: dict, steps: Iterable[PipelineStep]) -> dict:
 
     total_time_s = sum(float(timings.get(name, 0.0)) for name in step_names)
 
+    # Decision narrative
+    for ev in decision_events:
+        step = ev.get("step")
+        occ = ev.get("occurrence")
+        ran = ev.get("run")
+        decision_status = "ran" if ran else "skipped"
+        reason = ev.get("reason", "")
+        pol = ev.get("policy", "")
+        decision_narrative.append(f"{step}#{occ} {decision_status} — {reason} ({pol})")
+
     return {
         "status": status,
         "attempted_steps": attempted,
@@ -95,6 +111,8 @@ def build_run_summary(data: dict, steps: Iterable[PipelineStep]) -> dict:
         "failures": failures,
         "failure_flags": flags,
         "total_time_s": total_time_s,
+        "decision_events": decision_events,
+        "decision_narrative": decision_narrative,
     }
 
 def run_pipeline(steps: Iterable[PipelineStep], 
@@ -142,14 +160,34 @@ def run_pipeline(steps: Iterable[PipelineStep],
             name_counts[step.name] = occurrence
             ctx = StepContext(step_index=idx, occurrence=occurrence)
 
-            if not policy_obj.should_run(step, data, ctx):
-                logger.info(f"Skipping step: {step.name} (occurrence={occurrence})")
+            decision = policy_obj.decide(step, data, ctx)
+
+            # record decision metadata (both run + skip)
+            decision_events = list(data.get("decision_events", []))
+            decision_events.append(
+                {
+                "step": step.name,
+                "run": decision.run,
+                "policy": decision.policy,
+                "reason": decision.reason,
+                "step_index": ctx.step_index,
+                "occurrence": ctx.occurrence,
+                }
+            )
+            data = {**data, "decision_events": decision_events}
+
+            if not decision.run:
+                logger.info(
+                    f"Skipping step: {step.name} (occurrence={occurrence}) "
+                    f"policy={decision.policy} reason={decision.reason}"
+                )
                 timings = dict(data.get("timings", {}))
                 timings[step.name] = 0.0
                 skipped = list(data.get("skipped_steps", []))
-                skipped.append(step.name)
+                skipped.append({"step": step.name, "occurrence": ctx.occurrence, "step_index": ctx.step_index})
                 data = {**data, "timings": timings, "skipped_steps": skipped}
                 continue
+
 
             logger.info(f"Running step: {step.name}")
             start = time.perf_counter()
