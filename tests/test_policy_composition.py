@@ -2,30 +2,38 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from pipeline.policy import CompositePolicy, StepContext
+from pipeline.policy import CompositePolicy, ExecutionDecision, StepContext
 from pipeline.steps.base import PipelineStep
 from tests.test_invariants_and_orchestrator import DummyStep
 
 
 @dataclass(frozen=True)
 class AlwaysTruePolicy:
-    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+    def decide(self, step: PipelineStep, data: dict, ctx: StepContext) -> ExecutionDecision:
         data["trace"].append("true")
-        return True
+        return ExecutionDecision(run=True, reason="test: true", policy=self.__class__.__name__)
 
+    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+        return self.decide(step, data, ctx).run
 
 @dataclass(frozen=True)
 class AlwaysFalsePolicy:
-    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+    def decide(self, step: PipelineStep, data: dict, ctx: StepContext) -> ExecutionDecision:
         data["trace"].append("false")
-        return False
+        return ExecutionDecision(run=False, reason="test: false", policy=self.__class__.__name__)
+
+    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+        return self.decide(step, data, ctx).run
 
 
 @dataclass(frozen=True)
 class ShouldNotRunPolicy:
-    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+    def decide(self, step: PipelineStep, data: dict, ctx: StepContext) -> ExecutionDecision:
         data["trace"].append("should_not_run")
-        return True
+        return ExecutionDecision(run=True, reason="test: should_not_run", policy=self.__class__.__name__)
+
+    def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
+        return self.decide(step, data, ctx).run
 
 
 def test_composite_policy_short_circuits_on_first_false() -> None:
