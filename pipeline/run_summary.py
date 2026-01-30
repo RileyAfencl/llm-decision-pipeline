@@ -2,6 +2,8 @@
 from dataclasses import asdict, dataclass
 from typing import List, Dict, Any
 
+from pipeline.utils.invariants import InvariantViolation
+
 
 @dataclass(frozen=True)
 class DecisionEvent:
@@ -36,8 +38,31 @@ def serialize_run_summary(
     flags: dict,
     total_time_s: float,
     decision_events_raw: list[dict],
-    decision_narrative: list[str],
 ) -> dict:
+    
+    decision_narrative = []
+    for ev in decision_events_raw:
+        step = ev["step"]
+        occ = ev["occurrence"]
+        decision_status = "ran" if ev["run"] else "skipped"
+        reason = ev["reason"]
+        pol = ev["policy"]
+        decision_narrative.append(
+        f"{step}#{occ} {decision_status} — {reason} ({pol})"
+    )
+
+    if len(decision_events_raw) != len(decision_narrative):
+        raise InvariantViolation(
+            step="run_summary",
+            missing_keys=(),
+            message=(
+            "Decision narrative/event mismatch: "
+            f"{len(decision_events_raw)} events vs "
+            f"{len(decision_narrative)} narrative lines. "
+            "Each decision must produce exactly one narrative entry."
+            ),
+        )
+
     decision_objs = [
         DecisionEvent(
             step=ev["step"],
