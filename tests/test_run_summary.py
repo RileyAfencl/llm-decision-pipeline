@@ -61,8 +61,8 @@ def test_run_summary_degraded_and_step_accounting() -> None:
 
     summary = out["run_summary"]
     assert summary["status"] == "degraded"
-    assert summary["attempted_steps"] == ["boom"]          # boom attempted (timing may be 0.0 if failed fast; see note below)
-    assert summary["skipped_steps"] == ["after"]
+    assert summary["attempted_steps"] == ["boom#1"]          # boom attempted (timing may be 0.0 if failed fast; see note below)
+    assert summary["skipped_steps"] == ["after#1"]
     assert len(summary["failures"]) == 1
     assert summary["failures"][0]["step"] == "boom"
     assert "boom" in summary["failure_flags"]
