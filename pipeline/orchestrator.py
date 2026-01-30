@@ -2,7 +2,10 @@ from __future__ import annotations
 import time
 from typing import Iterable, Sequence, Set
 import uuid
+
+
 from pipeline.failure_policy import DefaultFailurePolicy, FailureMode, FailurePolicy
+from pipeline.run_summary import serialize_run_summary
 from pipeline.steps.base import PipelineStep
 from pipeline.utils.logger import get_logger
 from pipeline.utils.retry import retry_call
@@ -103,17 +106,30 @@ def build_run_summary(data: dict, steps: Iterable[PipelineStep]) -> dict:
         pol = ev.get("policy", "")
         decision_narrative.append(f"{step}#{occ} {decision_status} — {reason} ({pol})")
 
-    return {
-        "status": status,
-        "attempted_steps": attempted,
-        "ran_steps": ran,
-        "skipped_steps": skipped_ordered,
-        "failures": failures,
-        "failure_flags": flags,
-        "total_time_s": total_time_s,
-        "decision_events": decision_events,
-        "decision_narrative": decision_narrative,
-    }
+    if len(decision_events) != len(decision_narrative):
+        raise InvariantViolation(
+            step="run_summary",
+            missing_keys=(),
+            message=(
+            "Decision narrative/event mismatch: "
+            f"{len(decision_events)} events vs "
+            f"{len(decision_narrative)} narrative lines. "
+            "Each decision must produce exactly one narrative entry."
+            ),
+        )
+
+    return serialize_run_summary(
+        status=status,
+        attempted=attempted,
+        ran=ran,
+        skipped=skipped_ordered,
+        failures=failures,
+        flags=flags,
+        total_time_s=total_time_s,
+        decision_events_raw=decision_events,
+        decision_narrative=decision_narrative,
+    )
+
 
 def run_pipeline(steps: Iterable[PipelineStep], 
                  initial_data: dict, 
