@@ -53,7 +53,7 @@ def build_run_summary(data: dict, steps: Iterable[PipelineStep]) -> dict:
     flags = data.get("failure_flags", {}) or {}
     skipped_events = data.get("skipped_steps", []) or []
     decision_events = data.get("decision_events", []) or []
-    decision_narrative = []
+
     
     error_step = None
     if isinstance(data.get("error"), dict):
@@ -96,28 +96,6 @@ def build_run_summary(data: dict, steps: Iterable[PipelineStep]) -> dict:
 
     total_time_s = sum(float(timings.get(name, 0.0)) for name in step_names)
 
-    # Decision narrative
-    for ev in decision_events:
-        step = ev.get("step")
-        occ = ev.get("occurrence")
-        ran = ev.get("run")
-        decision_status = "ran" if ran else "skipped"
-        reason = ev.get("reason", "")
-        pol = ev.get("policy", "")
-        decision_narrative.append(f"{step}#{occ} {decision_status} — {reason} ({pol})")
-
-    if len(decision_events) != len(decision_narrative):
-        raise InvariantViolation(
-            step="run_summary",
-            missing_keys=(),
-            message=(
-            "Decision narrative/event mismatch: "
-            f"{len(decision_events)} events vs "
-            f"{len(decision_narrative)} narrative lines. "
-            "Each decision must produce exactly one narrative entry."
-            ),
-        )
-
     return serialize_run_summary(
         status=status,
         attempted=attempted,
@@ -127,7 +105,6 @@ def build_run_summary(data: dict, steps: Iterable[PipelineStep]) -> dict:
         flags=flags,
         total_time_s=total_time_s,
         decision_events_raw=decision_events,
-        decision_narrative=decision_narrative,
     )
 
 
