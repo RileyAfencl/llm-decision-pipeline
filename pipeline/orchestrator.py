@@ -51,9 +51,10 @@ def build_run_summary(data: dict, steps: Iterable[PipelineStep]) -> dict:
     timings = data.get("timings", {}) or {}
     failures = data.get("failures", []) or []
     flags = data.get("failure_flags", {}) or {}
-    skipped_events = data.get("skipped_steps", []) or []
     decision_events = data.get("decision_events", []) or []
 
+    def step_ref(ev: dict) -> str:
+        return f'{ev["step"]}#{ev["occurrence"]}'
     
     error_step = None
     if isinstance(data.get("error"), dict):
@@ -70,29 +71,19 @@ def build_run_summary(data: dict, steps: Iterable[PipelineStep]) -> dict:
     # step lists in declared order
     step_names = [s.name for s in steps]
 
-    failed_set = {f.get("step") for f in failures if isinstance(f, dict)}
+    failed_refs = {
+        f'{ev["step"]}#{ev["occurrence"]}'
+        for ev in failures
+        if isinstance(ev, dict)
+    }
     if error_step:
-        failed_set.add(error_step)
-    
-    # ordered list of skipped step names for summary display
-    skipped_ordered = [ev["step"] for ev in skipped_events]
+        failed_refs.add(error_step)
 
-    # name-only set for membership checks in existing logic
-    skipped_set = {ev["step"] for ev in skipped_events}
+    attempted = [step_ref(ev) for ev in decision_events if ev.get("run") is True]
 
+    ran = [name for name in attempted if name not in failed_refs]
 
-    # attempted = either has timing entry OR is in failures (covers failure paths)
-    attempted = [
-    name
-    for name in step_names
-    if ((name in timings) or (name in failed_set)) and (name not in skipped_set)
-    ]
-
-    # successfully ran = attempted minus failed minus skipped
-    ran = [name for name in attempted if name not in failed_set and name not in skipped_set]
-
-    # skipped (ordered) from step list
-    skipped_ordered = [name for name in step_names if name in skipped_set]
+    skipped = [step_ref(ev) for ev in decision_events if ev.get("run") is False]
 
     total_time_s = sum(float(timings.get(name, 0.0)) for name in step_names)
 
@@ -100,7 +91,7 @@ def build_run_summary(data: dict, steps: Iterable[PipelineStep]) -> dict:
         status=status,
         attempted=attempted,
         ran=ran,
-        skipped=skipped_ordered,
+        skipped=skipped,
         failures=failures,
         flags=flags,
         total_time_s=total_time_s,
