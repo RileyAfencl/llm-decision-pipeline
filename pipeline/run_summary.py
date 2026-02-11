@@ -14,6 +14,15 @@ class DecisionEvent:
     reason: str
     step_index: int
 
+@dataclass(frozen=True)
+class FailureEvent:
+    type: str
+    step: str
+    message: str
+    failure_mode: str
+    failure_reason: str | None
+    step_index: int
+    occurrence: int
 
 @dataclass(frozen=True)
 class RunSummary:
@@ -21,7 +30,7 @@ class RunSummary:
     attempted_steps: List[str]
     ran_steps: List[str]
     skipped_steps: List[str]
-    failures: List[Dict[str, Any]]
+    failures: list[FailureEvent]
     failure_flags: Dict[str, Any]
     total_time_s: float
     decision_events: List[DecisionEvent]
@@ -75,12 +84,25 @@ def serialize_run_summary(
         for ev in decision_events_raw
     ]
 
+    failure_objs = [
+    FailureEvent(
+        type=ev["type"],
+        step=ev["step"],
+        message=ev["message"],
+        failure_mode=ev["failure_mode"],
+        failure_reason=ev.get("failure_reason"),
+        step_index=ev["step_index"],
+        occurrence=ev["occurrence"],
+    )
+    for ev in failures
+    ]
+
     summary = RunSummary(
         status=status,
         attempted_steps=attempted,
         ran_steps=ran,
         skipped_steps=skipped,
-        failures=failures,
+        failures=failure_objs,
         failure_flags=flags,
         total_time_s=total_time_s,
         decision_events=decision_objs,
