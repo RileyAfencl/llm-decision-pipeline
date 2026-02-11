@@ -57,10 +57,25 @@ def test_run_summary_schema_contains_decisions_and_narrative() -> None:
         "step_index",
     }
 
+    required_failure_keys = {
+        "type",
+        "step",
+        "message",
+        "failure_mode",
+        "failure_reason",
+        "step_index",
+        "occurrence",
+    }
+
     for ev in summary["decision_events"]:
         assert isinstance(ev, dict)
         missing = required_event_keys - set(ev.keys())
         assert not missing, f"decision_event missing keys: {sorted(missing)}"
+    
+    for f in summary["failures"]:
+        assert isinstance(f, dict)
+        missing = required_failure_keys - set(f.keys())
+        assert not missing, f"failure missing keys: {sorted(missing)}"
 
     # narrative should correspond 1:1 with events (same count)
     assert len(summary["decision_events"]) == len(summary["decision_narrative"])
