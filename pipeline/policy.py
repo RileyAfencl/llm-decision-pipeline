@@ -117,15 +117,34 @@ class CompositePolicy:
     policies: Sequence[Policy]
 
     def decide(self, step: PipelineStep, data: dict, ctx: StepContext) -> ExecutionDecision:
+        trace_parts: list[str] = []
+
+        def _short(s: str, max_len: int = 80) -> str:
+            s = (s or "").strip()
+            return s if len(s) <= max_len else s[: max_len - 1] + "…"
+
         for policy in self.policies:
             d = policy.decide(step, data, ctx)
-            if not d.run:
-                return d  # preserve original reason/policy
+
+            if d.run:
+                trace_parts.append(f"{d.policy}=allow")
+                continue  # IMPORTANT: keep evaluating remaining policies
+
+            # veto
+            trace_parts.append(f"{d.policy}✗({_short(d.reason)})")
+            return ExecutionDecision(
+                run=False,
+                policy=self.__class__.__name__,
+                reason="trace: " + "> ".join(trace_parts),
+            )
+
+        # all allowed
         return ExecutionDecision(
             run=True,
-            reason="all policies allowed",
             policy=self.__class__.__name__,
+            reason="trace: " + "> ".join(trace_parts) if trace_parts else "trace: <empty>",
         )
+
 
     def should_run(self, step: PipelineStep, data: dict, ctx: StepContext) -> bool:
         return self.decide(step, data, ctx).run

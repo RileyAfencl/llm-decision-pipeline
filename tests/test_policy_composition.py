@@ -45,6 +45,11 @@ def test_composite_policy_short_circuits_on_first_false() -> None:
         policies=[AlwaysTruePolicy(), AlwaysFalsePolicy(), ShouldNotRunPolicy()]
     )
 
-    allowed = policy.should_run(step, data, ctx)
-    assert allowed is False
+    d = policy.decide(step, data, ctx)
+    assert d.run is False
+    assert d.policy == "CompositePolicy"
+    assert "AlwaysTruePolicy=allow" in d.reason
+    assert "AlwaysFalsePolicy✗(" in d.reason
+    assert "ShouldNotRunPolicy" not in d.reason
+
     assert data["trace"] == ["true", "false"]

@@ -349,6 +349,8 @@ def run_pipeline(steps: Iterable[PipelineStep],
                     "message": decision.reason or str(e),
                     "failure_mode": decision.mode.value,  # "abort"
                     "failure_reason": decision.reason,
+                    "step_index": ctx_fallback.step_index,
+                    "occurrence": ctx_fallback.occurrence,
                 },
                 "action": "error",
             }
