@@ -79,3 +79,7 @@ def test_run_summary_schema_contains_decisions_and_narrative() -> None:
 
     # narrative should correspond 1:1 with events (same count)
     assert len(summary["decision_events"]) == len(summary["decision_narrative"])
+
+    
+
+

@@ -43,3 +43,12 @@ def test_failure_policy_is_called_and_abort_sets_metadata() -> None:
     assert out["error"]["failure_mode"] == "abort"
     assert out["error"]["failure_reason"] == "spy abort"
     assert out["error"]["message"] == "spy abort"
+    summary = out["run_summary"]
+    assert "error" in summary
+    assert (summary["error"] is None) or isinstance(summary["error"], dict)
+    assert summary["status"] == "error"
+    assert isinstance(summary["error"], dict)
+    assert summary["error"]["step"] == "boom"
+    assert summary["error"]["failure_mode"] == "abort"
+    assert summary["error"]["step_index"] == 0
+    assert summary["error"]["occurrence"] == 1  

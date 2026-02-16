@@ -56,10 +56,6 @@ def build_run_summary(data: dict, steps: Iterable[PipelineStep]) -> dict:
     def step_ref(ev: dict) -> str:
         return f'{ev["step"]}#{ev["occurrence"]}'
     
-    error_step = None
-    if isinstance(data.get("error"), dict):
-            error_step = data["error"].get("step")
-
     # status
     if data.get("action") == "error":
         status = "error"
@@ -76,8 +72,12 @@ def build_run_summary(data: dict, steps: Iterable[PipelineStep]) -> dict:
         for ev in failures
         if isinstance(ev, dict)
     }
-    if error_step:
-        failed_refs.add(error_step)
+
+    error_raw = None
+    if isinstance(data.get("error"), dict):
+        error_raw = data["error"]
+        if error_raw.get("step") and error_raw.get("occurrence"):
+            failed_refs.add(f'{error_raw["step"]}#{error_raw["occurrence"]}')
 
     attempted = [step_ref(ev) for ev in decision_events if ev.get("run") is True]
 
@@ -93,11 +93,11 @@ def build_run_summary(data: dict, steps: Iterable[PipelineStep]) -> dict:
         ran=ran,
         skipped=skipped,
         failures=failures,
+        error=error_raw,
         flags=flags,
         total_time_s=total_time_s,
         decision_events_raw=decision_events,
     )
-
 
 def run_pipeline(steps: Iterable[PipelineStep], 
                  initial_data: dict, 
@@ -167,9 +167,7 @@ def run_pipeline(steps: Iterable[PipelineStep],
                 )
                 timings = dict(data.get("timings", {}))
                 timings[step.name] = 0.0
-                skipped = list(data.get("skipped_steps", []))
-                skipped.append({"step": step.name, "occurrence": ctx.occurrence, "step_index": ctx.step_index})
-                data = {**data, "timings": timings, "skipped_steps": skipped}
+                data = {**data, "timings": timings}
                 continue
 
 
@@ -244,14 +242,26 @@ def run_pipeline(steps: Iterable[PipelineStep],
             data = {**data, "timings": timings}
 
         except InvariantViolation as e:
+            ctx_fallback = locals().get(
+                "ctx",
+                StepContext(
+                step_index=idx,
+                occurrence=name_counts.get(step.name, 0) + 1,
+            ),
+        )
+
         # structured failure payload
             data = {
             **data,
             "error": {
                 "type": "invariant_violation",
                 "step": e.step,
+                "failure_mode": FailureMode.ABORT.value,
+                "failure_reason": "invariant_violation",
                 "missing_keys": list(e.missing_keys),
                 "message": str(e),
+                "step_index": ctx_fallback.step_index,
+                "occurrence": ctx_fallback.occurrence,
             },
             "action": "error",
         }
