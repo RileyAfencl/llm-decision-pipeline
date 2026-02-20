@@ -38,6 +38,11 @@ class ErrorEvent:
 
 @dataclass(frozen=True)
 class RunSummary:
+    summary_version: str
+    run_id: str
+    started_at: str
+    finished_at: str
+    duration_ms: int
     status: str
     attempted_steps: List[str]
     ran_steps: List[str]
@@ -51,6 +56,11 @@ class RunSummary:
 
 def serialize_run_summary(
     *,
+    summary_version: str = "v1",
+    run_id: str,
+    started_at: str,
+    finished_at: str,
+    duration_ms: int,
     status: str,
     attempted: list[str],
     ran: list[str],
@@ -127,6 +137,11 @@ def serialize_run_summary(
     ]
 
     summary = RunSummary(
+        summary_version=summary_version,
+        run_id=run_id,
+        started_at=started_at,
+        finished_at=finished_at,
+        duration_ms=duration_ms,
         status=status,
         attempted_steps=attempted,
         ran_steps=ran,

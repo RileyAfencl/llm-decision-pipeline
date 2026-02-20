@@ -12,6 +12,7 @@ from pipeline.utils.retry import retry_call
 from pipeline.version import PIPELINE_VERSION
 from pipeline.config import CONFIG
 from pipeline.utils.invariants import require_keys, InvariantViolation
+from datetime import datetime, timezone
 from pipeline.policy import DefaultPolicy, Policy, StepContext, CompositePolicy
 
 
@@ -88,6 +89,11 @@ def build_run_summary(data: dict, steps: Iterable[PipelineStep]) -> dict:
     total_time_s = sum(float(timings.get(name, 0.0)) for name in step_names)
 
     return serialize_run_summary(
+        summary_version="v1",
+        run_id=data["run_id"],
+        started_at=data["started_at"],
+        finished_at=data["finished_at"],
+        duration_ms=data["duration_ms"],
         status=status,
         attempted=attempted,
         ran=ran,
@@ -105,6 +111,21 @@ def run_pipeline(steps: Iterable[PipelineStep],
                  failure_policy: FailurePolicy | None = None,
              ) -> dict:
     run_id = str(uuid.uuid4())
+    started_at = datetime.now(timezone.utc).isoformat()
+    t0 = time.perf_counter()
+
+    def _finalize_and_summarize(data_in: dict) -> dict:
+        finished_at = datetime.now(timezone.utc).isoformat()
+        duration_ms = int((time.perf_counter() - t0) * 1000)
+
+        data_out = {
+            **data_in,
+            "started_at": started_at,
+            "finished_at": finished_at,
+            "duration_ms": duration_ms,
+        }
+        return {**data_out, "run_summary": build_run_summary(data_out, steps)}
+
     if failure_policy is None:
         failure_policy_obj: FailurePolicy = DefaultFailurePolicy()
     else:
@@ -266,8 +287,7 @@ def run_pipeline(steps: Iterable[PipelineStep],
             "action": "error",
         }
             logger.error(f"Invariant violation: {e}")
-            data = {**data, "run_summary": build_run_summary(data, steps)}
-            return data  # stop pipeline immediately 
+            return _finalize_and_summarize(data)
 
         except Exception as e:
         # # ctx may not exist if we failed before it was created; make a safe fallback
@@ -365,8 +385,6 @@ def run_pipeline(steps: Iterable[PipelineStep],
                 "action": "error",
             }
             logger.exception(f"Step failed: {step.name}")
-            data = {**data, "run_summary": build_run_summary(data, steps)}
-            return data
+            return _finalize_and_summarize(data)
         
-    data = {**data, "run_summary": build_run_summary(data, steps)}
-    return data
+    return _finalize_and_summarize(data)

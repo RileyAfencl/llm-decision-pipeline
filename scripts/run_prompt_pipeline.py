@@ -8,8 +8,7 @@ from pipeline.steps.reask_step import ReaskStep
 from pipeline.steps.repair_json_step import RepairJsonStep
 from pipeline.steps.score_step import ScoreStep
 from pipeline.steps.decide_step import DecideStep
-from pathlib import Path
-from pipeline.utils.persist import persist_run
+from pipeline.utils.persist import RunRecord, persist_run_record
 from pipeline.policy import SecondPassAfterReaskPolicy, DefaultPolicy, CompositePolicy
 
 
@@ -68,10 +67,11 @@ def main() -> None:
     if result.get("reask_blocked"):
         print("REASK BLOCKED: max attempts reached")
         
-    log_path = Path("runs") / "pipeline_runs.jsonl"
-    persist_run(result, log_path)
+    summary = result["run_summary"]
+    record = RunRecord.from_execution_summary(summary, summary_version=summary.get("summary_version", "v1"))
+    out_path = persist_run_record(record, runs_dir="runs")
 
-    print(f"\nRun persisted to {log_path}")
+    print(f"\nRun persisted to {out_path}")
 
 if __name__ == "__main__":
     main()
