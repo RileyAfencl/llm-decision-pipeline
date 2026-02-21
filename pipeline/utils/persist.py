@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 
 def _utc_now_iso() -> str:
@@ -73,13 +73,13 @@ class RunRecord:
             started_at=str(summary["started_at"]),
             finished_at=str(summary["finished_at"]),
             duration_ms=int(summary["duration_ms"]),
-            attempted=list(summary.get("attempted", [])),
-            ran=list(summary.get("ran", [])),
-            skipped=list(summary.get("skipped", [])),
-            failed=list(summary.get("failed", [])),
-            errored=list(summary.get("errored", [])),
+            attempted=list(summary.get("attempted_steps", [])),
+            ran=list(summary.get("ran_steps", [])),
+            skipped=list(summary.get("skipped_steps", [])),
+            failed=[],
+            errored=[],
             decision_events=_to_jsonable(summary.get("decision_events", [])),
-            failure_events=_to_jsonable(summary.get("failure_events", [])),
+            failure_events=_to_jsonable(summary.get("failures", [])),
             error=_to_jsonable(summary.get("error")) if summary.get("error") else None,
             created_at=_utc_now_iso(),
         )
@@ -99,3 +99,67 @@ def persist_run_record(record: RunRecord, runs_dir: str | Path = "runs") -> Path
     )
     return out_path
 
+SUPPORTED_SUMMARY_VERSIONS = {"v1"}
+
+
+def run_record_from_dict(payload: Dict[str, Any]) -> RunRecord:
+    """
+    Strict-ish constructor from a persisted dict.
+    Version-gated to avoid silently accepting incompatible artifacts.
+    """
+    if not isinstance(payload, dict):
+        raise TypeError("RunRecord payload must be a dict")
+
+    version = payload.get("summary_version")
+    if version not in SUPPORTED_SUMMARY_VERSIONS:
+        raise ValueError(
+            f"Unsupported run artifact version: {version!r}. "
+            f"Supported: {sorted(SUPPORTED_SUMMARY_VERSIONS)}"
+        )
+
+    attempted = payload.get("attempted")
+    if attempted is None:
+        attempted = payload.get("attempted_steps", [])
+
+    ran = payload.get("ran")
+    if ran is None:
+        ran = payload.get("ran_steps", [])
+
+    skipped = payload.get("skipped")
+    if skipped is None:
+        skipped = payload.get("skipped_steps", [])
+
+    failure_events = payload.get("failure_events")
+    if failure_events is None:
+        failure_events = payload.get("failures", [])
+
+    # Required core fields (fail loudly if missing)
+    return RunRecord(
+        summary_version=str(payload["summary_version"]),
+        run_id=str(payload["run_id"]),
+        status=str(payload["status"]),
+        started_at=str(payload["started_at"]),
+        finished_at=str(payload["finished_at"]),
+        duration_ms=int(payload["duration_ms"]),
+        attempted=attempted,
+        ran=ran,
+        skipped=skipped,
+        failed=list(payload.get("failed", [])),
+        errored=list(payload.get("errored", [])),
+        decision_events=_to_jsonable(payload.get("decision_events", [])),
+        failure_events=_to_jsonable(failure_events),
+        error=_to_jsonable(payload.get("error")) if payload.get("error") else None,
+        created_at=str(payload.get("created_at") or _utc_now_iso()),
+    )
+
+def load_run_record(path: Union[str, Path]) -> RunRecord:
+    """
+    Load a persisted RunRecord JSON artifact from disk.
+    """
+    p = Path(path)
+    if not p.exists():
+        raise FileNotFoundError(str(p))
+
+    raw = p.read_text(encoding="utf-8")
+    payload = json.loads(raw)
+    return run_record_from_dict(payload)
