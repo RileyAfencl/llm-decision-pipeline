@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from pipeline.utils.persist import load_run_record
+from pipeline.utils.persist import load_run_record, load_run_index
+
 
 
 def _resolve_path(arg: str, runs_dir: Path) -> Path:
@@ -26,12 +27,20 @@ def _resolve_path(arg: str, runs_dir: Path) -> Path:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Inspect a persisted pipeline run artifact.")
-    parser.add_argument("run", help="Run ID (UUID) or path to runs/<run_id>.json")
+    parser.add_argument("run", nargs="?", help="Run ID (UUID) or path to runs/<run_id>.json")
+    parser.add_argument("--latest", action="store_true", help="Inspect latest run from run index")
     parser.add_argument("--runs-dir", default="runs", help="Directory containing run artifacts (default: runs)")
     args = parser.parse_args()
 
     runs_dir = Path(args.runs_dir)
-    path = _resolve_path(args.run, runs_dir)
+
+    if args.latest:
+        idx = load_run_index(runs_dir)
+        path = Path(idx["latest_path"])
+    else:
+        if not args.run:
+            raise SystemExit("Provide RUN_ID/PATH or use --latest")
+        path = _resolve_path(args.run, runs_dir)
 
     record = load_run_record(path)
 
