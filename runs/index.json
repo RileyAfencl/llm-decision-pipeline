@@ -1,0 +1,33 @@
+{
+  "latest_run_id": "1879bb23-b67f-444b-92a6-ca1f77e3b3c8",
+  "latest_path": "runs/1879bb23-b67f-444b-92a6-ca1f77e3b3c8.json",
+  "latest_started_at": "2026-02-25T21:40:40.804976+00:00",
+  "recent": [
+    {
+      "run_id": "1879bb23-b67f-444b-92a6-ca1f77e3b3c8",
+      "path": "runs/1879bb23-b67f-444b-92a6-ca1f77e3b3c8.json",
+      "started_at": "2026-02-25T21:40:40.804976+00:00",
+      "status": "success",
+      "duration_ms": 4261,
+      "created_at": "2026-02-25T21:40:45.067713+00:00"
+    },
+    {
+      "run_id": "c0a6dace-2f72-4564-9296-c9f6cf790095",
+      "path": "runs/c0a6dace-2f72-4564-9296-c9f6cf790095.json",
+      "started_at": "2026-02-25T21:40:31.376184+00:00",
+      "status": "success",
+      "duration_ms": 4754,
+      "created_at": "2026-02-25T21:40:36.132451+00:00"
+    },
+    {
+      "run_id": "4067ea4c-4e52-4704-9038-c144832a1546",
+      "path": "runs/4067ea4c-4e52-4704-9038-c144832a1546.json",
+      "started_at": "2026-02-25T21:30:09.354242+00:00",
+      "status": "success",
+      "duration_ms": 6318,
+      "created_at": "2026-02-25T21:30:15.674064+00:00"
+    }
+  ],
+  "index_version": "v1",
+  "updated_at": "2026-02-25T21:40:45.076139+00:00"
+}

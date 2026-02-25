@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-from pipeline.utils.persist import load_run_record
+from pipeline.utils.persist import load_run_index, load_run_record
 from pipeline.utils.run_metrics import derive_run_metrics
 
 
@@ -38,6 +38,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Summarize run artifacts in a directory.")
     parser.add_argument("--runs-dir", default="runs", help="Directory containing run artifacts (default: runs)")
     parser.add_argument("--limit", type=int, default=25, help="Max rows to print (default: 25)")
+    parser.add_argument("--latest", type=int, help="Summarize last N runs from run index (fallback to directory scan)")
     args = parser.parse_args()
 
     runs_dir = Path(args.runs_dir)
@@ -45,12 +46,22 @@ def main() -> None:
         raise FileNotFoundError(str(runs_dir))
 
     rows: List[Tuple[Dict[str, Any], float]] = []
-    for path in _collect_run_paths(runs_dir):
+    if args.latest:
         try:
-            rows.append(_load_metrics_for_path(path))
-        except Exception as e:
-            # Keep the tool usable even if one artifact is bad.
-            rows.append(({"run_id": path.stem, "status": f"LOAD_FAIL:{type(e).__name__}"}, path.stat().st_mtime))
+            idx = load_run_index(runs_dir)
+            recent = idx.get("recent", [])[: args.latest]
+            for entry in recent:
+                rows.append(_load_metrics_for_path(Path(entry["path"])))
+        except Exception:
+            rows = [
+                _load_metrics_for_path(p)
+                for p in _collect_run_paths(runs_dir)
+            ]
+    else:
+        rows = [
+        _load_metrics_for_path(p)
+        for p in _collect_run_paths(runs_dir)
+        ]
 
     # Sort newest first
     def sort_key(item: Tuple[Dict[str, Any], float]) -> Tuple[str, float]:

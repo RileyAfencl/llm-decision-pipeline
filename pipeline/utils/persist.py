@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -87,21 +88,6 @@ class RunRecord:
     def to_dict(self) -> Dict[str, Any]:
         return _to_jsonable(asdict(self))
 
-
-def persist_run_record(record: RunRecord, runs_dir: str | Path = "runs") -> Path:
-    runs_path = Path(runs_dir)
-    runs_path.mkdir(parents=True, exist_ok=True)
-
-    out_path = runs_path / f"{record.run_id}.json"
-    out_path.write_text(
-        json.dumps(record.to_dict(), indent=2, sort_keys=True),
-        encoding="utf-8",
-    )
-    return out_path
-
-SUPPORTED_SUMMARY_VERSIONS = {"v1"}
-
-
 def run_record_from_dict(payload: Dict[str, Any]) -> RunRecord:
     """
     Strict-ish constructor from a persisted dict.
@@ -163,3 +149,94 @@ def load_run_record(path: Union[str, Path]) -> RunRecord:
     raw = p.read_text(encoding="utf-8")
     payload = json.loads(raw)
     return run_record_from_dict(payload)
+
+def _atomic_write_text(path: Path, text: str) -> None:
+    """
+    Atomic write: write to temp file in same directory then replace.
+    Works cross-platform with os.replace.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def update_run_index(
+    record: "RunRecord",
+    *,
+    runs_dir: Union[str, Path] = "runs",
+    recent_limit: int = 50,
+) -> Path:
+    """
+    Update runs/index.json with latest run metadata + rolling recent list.
+    """
+    runs_path = Path(runs_dir)
+    index_path = runs_path / "index.json"
+
+    # Best-effort load existing index
+    data: Dict[str, Any] = {}
+    if index_path.exists():
+        try:
+            data = json.loads(index_path.read_text(encoding="utf-8"))
+            if not isinstance(data, dict):
+                data = {}
+        except Exception:
+            data = {}
+
+    # Build new entry
+    entry = {
+        "run_id": record.run_id,
+        "path": str((runs_path / f"{record.run_id}.json").as_posix()),
+        "started_at": record.started_at,
+        "status": record.status,
+        "duration_ms": record.duration_ms,
+        "created_at": record.created_at,
+    }
+
+    # Update latest pointers
+    data["latest_run_id"] = record.run_id
+    data["latest_path"] = entry["path"]
+    data["latest_started_at"] = record.started_at
+
+    # Update rolling recent list (de-dupe by run_id, newest first)
+    recent = data.get("recent")
+    if not isinstance(recent, list):
+        recent = []
+
+    recent = [r for r in recent if isinstance(r, dict) and r.get("run_id") != record.run_id]
+    recent.insert(0, entry)
+    recent = recent[: max(0, int(recent_limit))]
+
+    data["recent"] = recent
+    data["index_version"] = "v1"
+    data["updated_at"] = _utc_now_iso()
+
+    _atomic_write_text(index_path, json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+    return index_path
+
+def load_run_index(runs_dir: Union[str, Path] = "runs") -> Dict[str, Any]:
+    index_path = Path(runs_dir) / "index.json"
+    if not index_path.exists():
+        raise FileNotFoundError("Run index not found")
+
+    data = json.loads(index_path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("Invalid run index format")
+
+    return data
+
+def persist_run_record(record: RunRecord, runs_dir: str | Path = "runs") -> Path:
+    runs_path = Path(runs_dir)
+    runs_path.mkdir(parents=True, exist_ok=True)
+
+    out_path = runs_path / f"{record.run_id}.json"
+    out_path.write_text(
+        json.dumps(record.to_dict(), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+
+    update_run_index(record, runs_dir=runs_dir)
+    
+    return out_path
+
+SUPPORTED_SUMMARY_VERSIONS = {"v1"}
