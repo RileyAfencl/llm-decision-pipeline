@@ -10,6 +10,7 @@ from pipeline.steps.score_step import ScoreStep
 from pipeline.steps.decide_step import DecideStep
 from pipeline.utils.persist import RunRecord, persist_run_record
 from pipeline.policy import SecondPassAfterReaskPolicy, DefaultPolicy, CompositePolicy
+from dataclasses import replace
 
 
 
@@ -20,6 +21,11 @@ def main() -> None:
 
     # break_json = input("Force malformed output? (y/N): ").strip().lower() == "y"
     break_json = False
+
+    inputs = {
+    "question": question,
+    "break_json": break_json,
+    }
 
     initial_data = {"question": question, "break_json": break_json}
     steps = [
@@ -69,6 +75,7 @@ def main() -> None:
         
     summary = result["run_summary"]
     record = RunRecord.from_execution_summary(summary, summary_version=summary.get("summary_version", "v1"))
+    record = replace(record, inputs=inputs)  # Ensure inputs are persisted for replay
     out_path = persist_run_record(record, runs_dir="runs")
 
     print(f"\nRun persisted to {out_path}")

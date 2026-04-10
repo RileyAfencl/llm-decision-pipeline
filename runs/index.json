@@ -1,8 +1,16 @@
 {
-  "latest_run_id": "1879bb23-b67f-444b-92a6-ca1f77e3b3c8",
-  "latest_path": "runs/1879bb23-b67f-444b-92a6-ca1f77e3b3c8.json",
-  "latest_started_at": "2026-02-25T21:40:40.804976+00:00",
+  "latest_run_id": "e50bf0e8-2586-4c58-8294-e01314825331",
+  "latest_path": "runs/e50bf0e8-2586-4c58-8294-e01314825331.json",
+  "latest_started_at": "2026-04-07T01:38:01.254729+00:00",
   "recent": [
+    {
+      "run_id": "e50bf0e8-2586-4c58-8294-e01314825331",
+      "path": "runs/e50bf0e8-2586-4c58-8294-e01314825331.json",
+      "started_at": "2026-04-07T01:38:01.254729+00:00",
+      "status": "success",
+      "duration_ms": 5395,
+      "created_at": "2026-04-07T01:38:06.651068+00:00"
+    },
     {
       "run_id": "1879bb23-b67f-444b-92a6-ca1f77e3b3c8",
       "path": "runs/1879bb23-b67f-444b-92a6-ca1f77e3b3c8.json",
@@ -29,5 +37,5 @@
     }
   ],
   "index_version": "v1",
-  "updated_at": "2026-02-25T21:40:45.076139+00:00"
+  "updated_at": "2026-04-07T01:38:06.658444+00:00"
 }
