@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+SUPPORTED_SUMMARY_VERSIONS = {"v1"}
 
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -60,6 +61,8 @@ class RunRecord:
 
     created_at: str
 
+    inputs: Optional[Dict[str, Any]] = None
+    
     @classmethod
     def from_execution_summary(
         cls,
@@ -83,6 +86,7 @@ class RunRecord:
             failure_events=_to_jsonable(summary.get("failures", [])),
             error=_to_jsonable(summary.get("error")) if summary.get("error") else None,
             created_at=_utc_now_iso(),
+            inputs=None
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -95,6 +99,8 @@ def run_record_from_dict(payload: Dict[str, Any]) -> RunRecord:
     """
     if not isinstance(payload, dict):
         raise TypeError("RunRecord payload must be a dict")
+    
+    inputs=_to_jsonable(payload.get("inputs")) if payload.get("inputs") is not None else None
 
     version = payload.get("summary_version")
     if version not in SUPPORTED_SUMMARY_VERSIONS:
@@ -136,6 +142,7 @@ def run_record_from_dict(payload: Dict[str, Any]) -> RunRecord:
         failure_events=_to_jsonable(failure_events),
         error=_to_jsonable(payload.get("error")) if payload.get("error") else None,
         created_at=str(payload.get("created_at") or _utc_now_iso()),
+        inputs=inputs
     )
 
 def load_run_record(path: Union[str, Path]) -> RunRecord:
@@ -238,5 +245,3 @@ def persist_run_record(record: RunRecord, runs_dir: str | Path = "runs") -> Path
     update_run_index(record, runs_dir=runs_dir)
     
     return out_path
-
-SUPPORTED_SUMMARY_VERSIONS = {"v1"}

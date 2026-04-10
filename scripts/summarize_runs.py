@@ -33,6 +33,41 @@ def _fmt(s: Any, width: int) -> str:
         return txt[: width - 1] + "…"
     return txt.ljust(width)
 
+def _aggregate_rows(rows: List[Tuple[Dict[str, Any], float]]) -> Dict[str, Any]:
+    total_runs = len(rows)
+    success = 0
+    degraded = 0
+    error = 0
+    total_duration_ms = 0
+    total_run_rate = 0.0
+    total_failures = 0
+
+    for metrics, _mtime in rows:
+        status = metrics.get("status")
+        if status == "success":
+            success += 1
+        elif status == "degraded":
+            degraded += 1
+        elif status == "error":
+            error += 1
+
+        total_duration_ms += int(metrics.get("duration_ms", 0) or 0)
+        total_run_rate += float(metrics.get("run_rate", 0.0) or 0.0)
+        total_failures += int(metrics.get("failures_total", 0) or 0)
+
+    avg_duration_ms = (total_duration_ms / total_runs) if total_runs else 0.0
+    avg_run_rate = (total_run_rate / total_runs) if total_runs else 0.0
+
+    return {
+        "total_runs": total_runs,
+        "success": success,
+        "degraded": degraded,
+        "error": error,
+        "avg_duration_ms": avg_duration_ms,
+        "avg_run_rate": avg_run_rate,
+        "total_failures": total_failures,
+    }
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Summarize run artifacts in a directory.")
@@ -120,6 +155,17 @@ def main() -> None:
             )
         )
 
+
+    print()
+    agg = _aggregate_rows(rows)
+    print("RUNS SUMMARY")
+    print(f"total_runs:       {agg['total_runs']}")
+    print(f"success:          {agg['success']}")
+    print(f"degraded:         {agg['degraded']}")
+    print(f"error:            {agg['error']}")
+    print(f"avg_duration_ms:  {agg['avg_duration_ms']:.2f}")
+    print(f"avg_run_rate:     {agg['avg_run_rate']:.2f}")
+    print(f"total_failures:   {agg['total_failures']}")
 
 if __name__ == "__main__":
     main()
