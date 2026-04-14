@@ -171,9 +171,73 @@ def main() -> None:
     print(f"all_checks_passed: {all_match}")
     print()
 
-    print("REPLAY VALIDATED OUTPUT")
-    print(replay_result.get("validated"))
+    original_validated = original_record.validated
+    replay_validated = replay_result.get("validated")
 
+    original_answer = None
+    replay_answer = None
+    original_confidence = None
+    replay_confidence = None
+
+    if isinstance(original_validated, dict):
+        original_answer = original_validated.get("answer")
+        original_confidence = original_validated.get("confidence")
+
+    if isinstance(replay_validated, dict):
+        replay_answer = replay_validated.get("answer")
+        replay_confidence = replay_validated.get("confidence")
+
+    answer_match = original_answer == replay_answer
+    confidence_match = original_confidence == replay_confidence
+    validated_match = original_validated == replay_validated
+
+    print("VALIDATED FIELD COMPARISON")
+    print(f"answer_match:      {answer_match}")
+    print(f"confidence_match:  {confidence_match}")
+    print()
+
+    if not answer_match:
+        print("ANSWER MISMATCH")
+        print("original_answer:")
+        print(original_answer)
+        print("replay_answer:")
+        print(replay_answer)
+        print()
+
+    if not confidence_match:
+        print("CONFIDENCE MISMATCH")
+        print(f"original_confidence: {original_confidence}")
+        print(f"replay_confidence:   {replay_confidence}")
+        print()
+
+    structural_match = (
+    status_match
+    and decision_count_match
+    and attempted_match
+    and skipped_match
+    )
+
+    content_match = (
+        validated_match
+        and answer_match
+        and confidence_match
+    )
+
+    print("REPLAY DIAGNOSTICS")
+    print(f"structural_match: {structural_match}")
+    print(f"content_match:    {content_match}")
+    print()
+
+    if structural_match and content_match:
+        replay_verdict = "full_match"
+    elif structural_match and not content_match:
+        replay_verdict = "structural_match_only"
+    else:
+        replay_verdict = "replay_diverged"
+
+    print("REPLAY VERDICT")
+    print(f"verdict: {replay_verdict}")
+    print()
 
 if __name__ == "__main__":
     main()
