@@ -76,6 +76,7 @@ def main() -> None:
     summary = result["run_summary"]
     record = RunRecord.from_execution_summary(summary, summary_version=summary.get("summary_version", "v1"))
     record = replace(record, inputs=inputs)  # Ensure inputs are persisted for replay
+    record = replace(record, validated=result.get("validated"))  # Persist validated output for replay
     out_path = persist_run_record(record, runs_dir="runs")
 
     print(f"\nRun persisted to {out_path}")
