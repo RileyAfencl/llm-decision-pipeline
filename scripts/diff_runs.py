@@ -1,7 +1,6 @@
 from __future__ import annotations
 import argparse
 from pathlib import Path
-from pprint import pprint
 from pipeline.utils.persist import load_run_index, load_run_record
 from pipeline.utils.run_diff import diff_runs
 
