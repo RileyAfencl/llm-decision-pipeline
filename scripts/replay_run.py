@@ -191,6 +191,7 @@ def main() -> None:
     confidence_match = original_confidence == replay_confidence
     validated_match = original_validated == replay_validated
 
+
     print("VALIDATED FIELD COMPARISON")
     print(f"answer_match:      {answer_match}")
     print(f"confidence_match:  {confidence_match}")
@@ -204,11 +205,34 @@ def main() -> None:
         print(replay_answer)
         print()
 
-    if not confidence_match:
-        print("CONFIDENCE MISMATCH")
-        print(f"original_confidence: {original_confidence}")
-        print(f"replay_confidence:   {replay_confidence}")
+    if confidence_match:
+        print("CONFIDENCE MATCH")
+        print(f"value: {original_confidence}")
         print()
+
+    if not confidence_match:
+        if isinstance(original_confidence, (int, float)) and isinstance(replay_confidence, (int, float)):
+            confidence_tolerance = 0.05
+            confidence_delta = abs(replay_confidence - original_confidence)
+
+            if confidence_delta <= confidence_tolerance:
+                print("CONFIDENCE MISMATCH WITHIN TOLERANCE")
+                print(f"original_confidence: {original_confidence}")
+                print(f"replay_confidence:   {replay_confidence}")
+                print(f"tolerance:           {confidence_tolerance}")
+                print(f"confidence_delta:    {confidence_delta}")
+                print()
+            else:
+                print("CONFIDENCE MISMATCH")
+                print(f"original_confidence: {original_confidence}")
+                print(f"replay_confidence:   {replay_confidence}")
+                print(f"confidence_delta:    {confidence_delta}")
+                print()
+        else:
+            print("CONFIDENCE MISMATCH (NON-NUMERIC)")
+            print(f"original_confidence: {original_confidence}")
+            print(f"replay_confidence:   {replay_confidence}")
+            print()
 
     structural_match = (
     status_match

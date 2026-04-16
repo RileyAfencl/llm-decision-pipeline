@@ -73,4 +73,28 @@ def diff_runs(a: RunRecord, b: RunRecord) -> Dict[str, Any]:
                 "match": a_confidence == b_confidence,
             },
         },
+
+        "summary_version": {
+            "a": a.summary_version,
+            "b": b.summary_version,
+            "match": a.summary_version == b.summary_version,
+        },
+
+        "inputs_present": {
+            "a": a.inputs is not None,
+            "b": b.inputs is not None,
+            "match": (a.inputs is not None) == (b.inputs is not None),
+        },
+
+        "validated_present": {
+            "a": a.validated is not None,
+            "b": b.validated is not None,
+            "match": (a.validated is not None) == (b.validated is not None),
+        },
+        
+        "created_at": {
+            "a": a.created_at,
+            "b": b.created_at,
+            "match": a.created_at == b.created_at,
+        }
     }

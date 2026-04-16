@@ -1,8 +1,24 @@
 {
-  "latest_run_id": "d1e14b1a-67da-4f68-aaf6-99eb91cf7259",
-  "latest_path": "runs/d1e14b1a-67da-4f68-aaf6-99eb91cf7259.json",
-  "latest_started_at": "2026-04-10T18:26:58.250376+00:00",
+  "latest_run_id": "dacc248f-2f85-4d9c-bc98-bb4e9ae6118d",
+  "latest_path": "runs/dacc248f-2f85-4d9c-bc98-bb4e9ae6118d.json",
+  "latest_started_at": "2026-04-15T21:50:51.257926+00:00",
   "recent": [
+    {
+      "run_id": "dacc248f-2f85-4d9c-bc98-bb4e9ae6118d",
+      "path": "runs/dacc248f-2f85-4d9c-bc98-bb4e9ae6118d.json",
+      "started_at": "2026-04-15T21:50:51.257926+00:00",
+      "status": "success",
+      "duration_ms": 5363,
+      "created_at": "2026-04-15T21:50:56.622510+00:00"
+    },
+    {
+      "run_id": "6ee73ddc-a617-4e0a-b8c6-4fb61dbfb7b5",
+      "path": "runs/6ee73ddc-a617-4e0a-b8c6-4fb61dbfb7b5.json",
+      "started_at": "2026-04-15T21:49:03.186558+00:00",
+      "status": "success",
+      "duration_ms": 4871,
+      "created_at": "2026-04-15T21:49:08.059108+00:00"
+    },
     {
       "run_id": "d1e14b1a-67da-4f68-aaf6-99eb91cf7259",
       "path": "runs/d1e14b1a-67da-4f68-aaf6-99eb91cf7259.json",
@@ -53,5 +69,5 @@
     }
   ],
   "index_version": "v1",
-  "updated_at": "2026-04-10T18:27:03.177926+00:00"
+  "updated_at": "2026-04-15T21:50:56.628472+00:00"
 }
