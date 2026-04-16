@@ -46,9 +46,62 @@ def main() -> None:
     record_b = load_run_record(path_b)
 
     diff = diff_runs(record_a, record_b)
+
+    mismatches = []
+
+    if not diff["status"]["match"]:
+        mismatches.append("status")
+
+    if not diff["duration_ms"]["match"]:
+        mismatches.append("duration_ms")
+
+    for key, payload in diff["counts"].items():
+        if not payload["match"]:
+            mismatches.append(f"counts.{key}")
+
+    if not diff["validated"]["answer"]["match"]:
+        mismatches.append("validated.answer")
+
+    if not diff["validated"]["confidence"]["match"]:
+        mismatches.append("validated.confidence")
+    
+    if not diff["summary_version"]["match"]:
+        mismatches.append("summary_version")
+
+    if not diff["inputs_present"]["match"]:
+        mismatches.append("inputs_present")
+
+    if not diff["validated_present"]["match"]:
+        mismatches.append("validated_present")
+
     print("RUN DIFF")
     print(f"run_a: {diff['run_a_id']}")
     print(f"run_b: {diff['run_b_id']}")
+    print()
+
+    summary_version = diff["summary_version"]
+    print("SCHEMA")
+    print(f"summary_version_a: {summary_version['a']}")
+    print(f"summary_version_b: {summary_version['b']}")
+    print(f"summary_version_match: {summary_version['match']}")
+
+    inputs_present = diff["inputs_present"]
+    print(f"inputs_present_a: {inputs_present['a']}")
+    print(f"inputs_present_b: {inputs_present['b']}")
+    print(f"inputs_presence_match: {inputs_present['match']}")
+
+    validated_present = diff["validated_present"]
+    print(f"validated_present_a: {validated_present['a']}")
+    print(f"validated_present_b: {validated_present['b']}")
+    print(f"validated_presence_match: {validated_present['match']}")
+    print()
+
+    print("DIFF HIGHLIGHTS")
+    if mismatches:
+        for item in mismatches:
+            print(f"- {item}")
+    else:
+        print("- no mismatches")
     print()
 
     status = diff["status"]
@@ -66,7 +119,26 @@ def main() -> None:
     print(f"match: {duration['match']}")
     print()
 
-    print("COUNTS")
+    print("COUNT MISMATCHES")
+    count_mismatches = {
+        key: payload
+        for key, payload in diff["counts"].items()
+        if not payload["match"]
+    }
+
+    if count_mismatches:
+        for key, payload in count_mismatches.items():
+            print(
+                f"{key}: "
+                f"a={payload['a']} "
+                f"b={payload['b']} "
+                f"delta={payload['delta']}"
+            )
+    else:
+        print("- none")
+    print()
+
+    print("ALL COUNTS")
     for key, payload in diff["counts"].items():
         print(
             f"{key}: "
@@ -96,17 +168,41 @@ def main() -> None:
     print(f"match: {confidence['match']}")
     print()
 
-    all_count_matches = all(v["match"] for v in diff["counts"].values())
-    all_checks_passed = (
-        diff["status"]["match"]
-        and diff["duration_ms"]["match"]
-        and all_count_matches
-        and diff["validated"]["answer"]["match"]
-        and diff["validated"]["confidence"]["match"]
+    schema_match = (
+        diff["summary_version"]["match"]
+        and diff["inputs_present"]["match"]
+        and diff["validated_present"]["match"]
     )
 
+    status_match = diff["status"]["match"]
+    duration_match = diff["duration_ms"]["match"]
+    all_count_matches = all(v["match"] for v in diff["counts"].values())
+    validated_answer_match = diff["validated"]["answer"]["match"]
+    validated_confidence_match = diff["validated"]["confidence"]["match"]
+
+    if schema_match and status_match and all_count_matches and validated_answer_match and validated_confidence_match and duration_match:
+        diff_verdict = "full_match"
+    elif schema_match and status_match and all_count_matches:
+        diff_verdict = "structural_match_only"
+    elif not schema_match:
+        diff_verdict = "schema_mismatch"
+    else:
+        diff_verdict = "run_mismatch"
+
     print("DIFF SUMMARY")
-    print(f"all_checks_passed: {all_checks_passed}")
+    print(f"all_checks_passed: {schema_match and status_match and duration_match and all_count_matches and validated_answer_match and validated_confidence_match}")
+    print(f"verdict: {diff_verdict}")
+
+    created_at = diff["created_at"]
+    print(f"created_at_a: {created_at['a']}")
+    print(f"created_at_b: {created_at['b']}")
+    print()
+
+    if not summary_version["match"]:
+        print("SCHEMA VERSION MISMATCH")
+        print("These runs were produced under different artifact versions.")
+        print("Comparison may still run, but results should be interpreted carefully.")
+        print()
 
 
 if __name__ == "__main__":
