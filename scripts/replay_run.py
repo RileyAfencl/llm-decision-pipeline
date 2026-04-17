@@ -15,7 +15,8 @@ from pipeline.steps.repair_json_step import RepairJsonStep
 from pipeline.steps.score_step import ScoreStep
 from pipeline.utils.persist import load_run_index, load_run_record
 from pipeline.utils.replay import reconstruct_initial_data
-
+from pipeline.replay_config import ReplayConfig
+from pipeline.replay_verdict import ReplayVerdict
 
 def _resolve_run_path(arg: str, runs_dir: Path) -> Path:
     p = Path(arg)
@@ -64,6 +65,7 @@ def main() -> None:
     parser.add_argument("--runs-dir", default="runs", help="Directory containing run artifacts (default: runs)")
     parser.add_argument("--latest", action="store_true", help="Use latest run from runs/index.json")
     args = parser.parse_args()
+    config = ReplayConfig()
 
     runs_dir = Path(args.runs_dir)
 
@@ -212,7 +214,7 @@ def main() -> None:
 
     if not confidence_match:
         if isinstance(original_confidence, (int, float)) and isinstance(replay_confidence, (int, float)):
-            confidence_tolerance = 0.05
+            confidence_tolerance = config.confidence_tolerance
             confidence_delta = abs(replay_confidence - original_confidence)
 
             if confidence_delta <= confidence_tolerance:
@@ -253,14 +255,14 @@ def main() -> None:
     print()
 
     if structural_match and content_match:
-        replay_verdict = "full_match"
+        replay_verdict = ReplayVerdict.FULL_MATCH
     elif structural_match and not content_match:
-        replay_verdict = "structural_match_only"
+        replay_verdict = ReplayVerdict.STRUCTURAL_MATCH_ONLY
     else:
-        replay_verdict = "replay_diverged"
+        replay_verdict = ReplayVerdict.REPLAY_DIVERGED
 
     print("REPLAY VERDICT")
-    print(f"verdict: {replay_verdict}")
+    print(f"verdict: {replay_verdict.value}")
     print()
 
 if __name__ == "__main__":

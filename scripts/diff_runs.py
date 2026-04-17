@@ -3,7 +3,7 @@ import argparse
 from pathlib import Path
 from pipeline.utils.persist import load_run_index, load_run_record
 from pipeline.utils.run_diff import diff_runs
-
+from pipeline.diff_verdict import DiffVerdict
 
 def _resolve_run_path(arg: str, runs_dir: Path) -> Path:
     p = Path(arg)
@@ -26,11 +26,19 @@ def main() -> None:
     parser.add_argument("run_b", nargs="?", help="Comparison run id/path")
     parser.add_argument("--runs-dir", default="runs", help="Directory containing run artifacts (default: runs)")
     parser.add_argument("--latest", action="store_true", help="Use latest run from index as run_a")
+    parser.add_argument("--latest-2",action="store_true",help="Compare the two most recent runs from the run index",)
     args = parser.parse_args()
 
     runs_dir = Path(args.runs_dir)
 
-    if args.latest:
+    if args.latest_2:
+        idx = load_run_index(runs_dir)
+        recent = idx.get("recent", [])
+        if len(recent) < 2:
+            raise SystemExit("Need at least two indexed runs for --latest-2")
+        path_a = Path(recent[0]["path"])
+        path_b = Path(recent[1]["path"])
+    elif args.latest:
         idx = load_run_index(runs_dir)
         path_a = Path(idx["latest_path"])
         if not args.run_b:
@@ -181,17 +189,17 @@ def main() -> None:
     validated_confidence_match = diff["validated"]["confidence"]["match"]
 
     if schema_match and status_match and all_count_matches and validated_answer_match and validated_confidence_match and duration_match:
-        diff_verdict = "full_match"
+        diff_verdict = DiffVerdict.FULL_MATCH
     elif schema_match and status_match and all_count_matches:
-        diff_verdict = "structural_match_only"
+        diff_verdict = DiffVerdict.STRUCTURAL_MATCH_ONLY
     elif not schema_match:
-        diff_verdict = "schema_mismatch"
+        diff_verdict = DiffVerdict.SCHEMA_MISMATCH
     else:
-        diff_verdict = "run_mismatch"
+        diff_verdict = DiffVerdict.RUN_MISMATCH
 
     print("DIFF SUMMARY")
     print(f"all_checks_passed: {schema_match and status_match and duration_match and all_count_matches and validated_answer_match and validated_confidence_match}")
-    print(f"verdict: {diff_verdict}")
+    print(f"verdict: {diff_verdict.value}")
 
     created_at = diff["created_at"]
     print(f"created_at_a: {created_at['a']}")
