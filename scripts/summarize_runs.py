@@ -74,6 +74,7 @@ def main() -> None:
     parser.add_argument("--runs-dir", default="runs", help="Directory containing run artifacts (default: runs)")
     parser.add_argument("--limit", type=int, default=25, help="Max rows to print (default: 25)")
     parser.add_argument("--latest", type=int, help="Summarize last N runs from run index (fallback to directory scan)")
+    parser.add_argument("--latest-2",action="store_true",help="Summarize the two most recent indexed runs",)
     args = parser.parse_args()
 
     runs_dir = Path(args.runs_dir)
@@ -81,7 +82,14 @@ def main() -> None:
         raise FileNotFoundError(str(runs_dir))
 
     rows: List[Tuple[Dict[str, Any], float]] = []
-    if args.latest:
+
+    if args.latest_2:
+        idx = load_run_index(runs_dir)
+        recent = idx.get("recent", [])[:2]
+        rows = []
+        for entry in recent:
+            rows.append(_load_metrics_for_path(Path(entry["path"])))
+    elif args.latest:
         try:
             idx = load_run_index(runs_dir)
             recent = idx.get("recent", [])[: args.latest]
