@@ -1,4 +1,3 @@
-[check](../../actions/workflows/check.yml/badge.svg)
 ![check](../../actions/workflows/check.yml/badge.svg)
 # AI Pipeline with Evaluation and Observability
 
@@ -47,22 +46,23 @@ The system is designed to reflect real-world AI engineering patterns, including 
 ## Quick Start
 
 ### 1. Run the Pipeline
-
+```bash
 python -m scripts.run_prompt_pipeline --question "What is the capital of France?" 
-
+```
 ### 2. Compare the Replay
-
+```bash
 python -m scripts.replay_run --latest --json
-
+```
 ### 3. Check the diff with another run.
-
+```bash
 python -m scripts.run_prompt_pipeline --question "What is the capital of Spain?" 
+
 python -m scripts.diff_runs --latest-2 --json
-
+```
 ### 4. Check the Summary of Recent Runs
-
+```bash
 python -m scripts.summarize_runs --latest 2 --json
-
+```
 ## Example Output
 
 Representative outputs from replay, diff, and summary tools: 
