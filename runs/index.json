@@ -1,8 +1,16 @@
 {
-  "latest_run_id": "dacc248f-2f85-4d9c-bc98-bb4e9ae6118d",
-  "latest_path": "runs/dacc248f-2f85-4d9c-bc98-bb4e9ae6118d.json",
-  "latest_started_at": "2026-04-15T21:50:51.257926+00:00",
+  "latest_run_id": "46310512-3eba-4de5-8b00-92138fc8aa23",
+  "latest_path": "runs/46310512-3eba-4de5-8b00-92138fc8aa23.json",
+  "latest_started_at": "2026-04-17T04:24:04.855001+00:00",
   "recent": [
+    {
+      "run_id": "46310512-3eba-4de5-8b00-92138fc8aa23",
+      "path": "runs/46310512-3eba-4de5-8b00-92138fc8aa23.json",
+      "started_at": "2026-04-17T04:24:04.855001+00:00",
+      "status": "success",
+      "duration_ms": 5658,
+      "created_at": "2026-04-17T04:24:10.514081+00:00"
+    },
     {
       "run_id": "dacc248f-2f85-4d9c-bc98-bb4e9ae6118d",
       "path": "runs/dacc248f-2f85-4d9c-bc98-bb4e9ae6118d.json",
@@ -69,5 +77,5 @@
     }
   ],
   "index_version": "v1",
-  "updated_at": "2026-04-15T21:50:56.628472+00:00"
+  "updated_at": "2026-04-17T04:24:10.515164+00:00"
 }
