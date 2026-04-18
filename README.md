@@ -1,3 +1,4 @@
+[check](../../actions/workflows/check.yml/badge.svg)
 ![check](../../actions/workflows/check.yml/badge.svg)
 # AI Pipeline with Evaluation and Observability
 
@@ -26,19 +27,144 @@ The system is designed to reflect real-world AI engineering patterns, including 
   Each pipeline execution is assigned a unique run ID, logs step-level timing, and persists results as JSON lines.
 
 - **CLI and API interfaces**  
-  The pipeline can be executed via a command-line interface or through a FastAPI service.
+   Supports execution via command line and FastAPI service.
 
-## Use Cases
+## How It Works
 
-- Building reliable LLM-backed systems
-- Enforcing structured outputs from language models
-- Auditable AI decision-making pipelines
-- Experimentation with prompt repair and re-asking strategies
+1. **Run the pipeline**  
+   A question is processed through a sequence of steps that generate, validate, and evaluate an LLM response.
 
-## Architecture Overview
+2. **Validate and repair outputs**  
+   Outputs are checked against a schema and automatically repaired if malformed.
 
-The pipeline is implemented as a sequence of composable steps, each with clearly defined inputs and outputs. This design enables easy extension, testing, and reuse across different applications.
+3. **Evaluate and decide**  
+   Outputs are scored and graded to assess quality and determine whether they meet predetermined standards.
 
+4. **Analyze results**  
+   Runs can be replayed, diffed, and summarized to detect inconsistencies, measure reliability, and inspect system behavior.
+
+
+## Quick Start
+
+### 1. Run the Pipeline
+
+python -m scripts.run_prompt_pipeline --question "What is the capital of France?" 
+
+### 2. Compare the Replay
+
+python -m scripts.replay_run --latest --json
+
+### 3. Check the diff with another run.
+
+python -m scripts.run_prompt_pipeline --question "What is the capital of Spain?" 
+python -m scripts.diff_runs --latest-2 --json
+
+### 4. Check the Summary of Recent Runs
+
+python -m scripts.summarize_runs --latest 2 --json
+
+## Example Output
+
+Representative outputs from replay, diff, and summary tools: 
+
+### Summary JSON
+
+```json
+{
+  "verdict": "stable",
+  "health": {
+    "status": "healthy"
+  },
+  "runs": {
+    "total": 2,
+    "success": 2,
+    "degraded": 0,
+    "error": 0
+  },
+  "performance": {
+    "avg_duration_ms": 2510.5,
+    "avg_run_rate": 1.0
+  },
+  "failures": {
+    "total": 0
+  },
+  "validation": {
+    "present": 2,
+    "missing": 0,
+    "success_rate": 1.0
+  }
+}
+``` 
+
+### Diff JSON
+
+```json
+{
+  "verdict": "structural_match_only",
+  "health": {
+    "status": "content_drift"
+  },
+  "status": {
+    "a": "success",
+    "b": "success",
+    "match": true
+  },
+  "duration": {
+    "a_ms": 2117,
+    "b_ms": 2904,
+    "delta_ms": 787,
+    "match": false
+  },
+}
+```
+
+### Replay JSON
+
+```json
+{
+  "verdict": "full_match",
+  "health": {
+    "status": "healthy"
+  },
+  "diagnostics": {
+    "structural_match": true,
+    "content_match": true
+  },
+  "validated": {
+    "answer_match": true,
+    "confidence_match": true
+  }
+}
+```
+
+## Repository Structure
+
+The project is organized into core pipeline logic, CLI tooling, tests, and persisted run artifacts:
+
+```text
+pipeline/
+  orchestrator.py        # Core execution engine
+  steps/                 # Pipeline steps (prompt, repair, score, etc.)
+  policy/                # Execution and retry policies
+  utils/                 # Persistence, metrics, invariants, helpers
+  clients/               # LLM client abstraction
+
+scripts/
+  run_prompt_pipeline.py # Run the pipeline (CLI or interactive)
+  replay_run.py          # Replay a run and compare outputs
+  diff_runs.py           # Compare two runs
+  summarize_runs.py      # Aggregate and summarize run metrics
+
+tests/
+  test_*.py              # Unit + contract tests (invariants, policies, API, persistence)
+
+runs/
+  *.json                 # Persisted run artifacts
+  index.json             # Rolling index of recent runs
+
+config/
+  .env / settings        # Environment configuration (not committed)
+```
 ## Status
 
 Actively evolving with ongoing improvements in evaluation, observability, and system robustness.
