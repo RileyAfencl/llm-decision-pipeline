@@ -1,3 +1,4 @@
+[check](../../actions/workflows/check.yml/badge.svg)
 ![check](../../actions/workflows/check.yml/badge.svg)
 # AI Pipeline with Evaluation and Observability
 
