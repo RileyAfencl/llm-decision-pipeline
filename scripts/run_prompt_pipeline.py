@@ -1,4 +1,5 @@
 
+import argparse
 from pipeline.orchestrator import run_pipeline
 from pipeline.steps.choose_best_step import ChooseBestStep
 from pipeline.steps.explain_decision_step import ExplainDecisionStep
@@ -15,7 +16,18 @@ from dataclasses import replace
 
 
 def main() -> None:
-    question = input("What would you like to ask? ").strip()
+    parser = argparse.ArgumentParser(description="Run the prompt pipeline.")
+    parser.add_argument(
+        "--question",
+        help="Question to run through the pipeline. If omitted, prompt interactively.",
+    )
+    args = parser.parse_args()
+
+    if args.question:
+        question = args.question.strip()
+    else:
+        question = input("What would you like to ask? ").strip()
+
     if not question:
         raise ValueError("Please enter a non-empty question.")
 
