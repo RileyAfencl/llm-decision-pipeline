@@ -64,6 +64,7 @@ def main() -> None:
     parser.add_argument("run", nargs="?", help="Run ID (UUID) or path to runs/<run_id>.json")
     parser.add_argument("--runs-dir", default="runs", help="Directory containing run artifacts (default: runs)")
     parser.add_argument("--latest", action="store_true", help="Use latest run from runs/index.json")
+    parser.add_argument("--json",action="store_true",help="Output replay result as JSON",)
     args = parser.parse_args()
     config = ReplayConfig()
 
@@ -261,9 +262,38 @@ def main() -> None:
     else:
         replay_verdict = ReplayVerdict.REPLAY_DIVERGED
 
+    if replay_verdict == ReplayVerdict.FULL_MATCH:
+        replay_health = "healthy"
+    elif replay_verdict == ReplayVerdict.STRUCTURAL_MATCH_ONLY:
+        replay_health = "content_drift"
+    else:
+        replay_health = "needs_attention"
+
+    replay_result = {
+        "verdict": replay_verdict.value,
+        "health": {
+            "status": replay_health,
+        },
+        "diagnostics": {
+            "structural_match": structural_match,
+            "content_match": content_match,
+        },
+        "validated": {
+            "answer_match": answer_match,
+            "confidence_match": confidence_match,
+        },
+    }
+
     print("REPLAY VERDICT")
     print(f"verdict: {replay_verdict.value}")
     print()
+    print("REPLAY HEALTH")
+    print(f"status: {replay_health}")
+    print()
+
+    if args.json:
+        import json
+        print(json.dumps(replay_result, indent=2))
 
 if __name__ == "__main__":
     main()

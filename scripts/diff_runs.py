@@ -19,7 +19,6 @@ def _resolve_run_path(arg: str, runs_dir: Path) -> Path:
         f"Tried file path and '{candidate}'."
     )
 
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Diff two persisted pipeline runs.")
     parser.add_argument("run_a", nargs="?", help="Baseline run id/path")
@@ -27,6 +26,7 @@ def main() -> None:
     parser.add_argument("--runs-dir", default="runs", help="Directory containing run artifacts (default: runs)")
     parser.add_argument("--latest", action="store_true", help="Use latest run from index as run_a")
     parser.add_argument("--latest-2",action="store_true",help="Compare the two most recent runs from the run index",)
+    parser.add_argument("--json",action="store_true",help="Output diff result as JSON",)
     args = parser.parse_args()
 
     runs_dir = Path(args.runs_dir)
@@ -196,10 +196,48 @@ def main() -> None:
         diff_verdict = DiffVerdict.SCHEMA_MISMATCH
     else:
         diff_verdict = DiffVerdict.RUN_MISMATCH
+    
+    if diff_verdict == DiffVerdict.FULL_MATCH:
+        diff_health = "healthy"
+    elif diff_verdict == DiffVerdict.STRUCTURAL_MATCH_ONLY:
+        diff_health = "content_drift"
+    elif diff_verdict == DiffVerdict.SCHEMA_MISMATCH:
+        diff_health = "schema_mismatch"
+    else:
+        diff_health = "needs_attention"
+
+    diff_result = {
+        "verdict": diff_verdict.value,
+        "health": {
+        "status": diff_health,
+        },
+        "status": {
+            "a": diff["status"]["a"],
+            "b": diff["status"]["b"],
+            "match": diff["status"]["match"],
+        },
+        "duration": {
+            "a_ms": diff["duration_ms"]["a"],
+            "b_ms": diff["duration_ms"]["b"],
+            "delta_ms": diff["duration_ms"]["delta"],
+            "match": diff["duration_ms"]["match"],
+        },
+        "counts": diff["counts"],
+        "validated": {
+            "answer_match": diff["validated"]["answer"]["match"],
+            "confidence_match": diff["validated"]["confidence"]["match"],
+        },
+        "schema": {
+            "summary_version_match": diff["summary_version"]["match"],
+            "inputs_match": diff["inputs_present"]["match"],
+            "validated_match": diff["validated_present"]["match"],
+        },
+   }
 
     print("DIFF SUMMARY")
     print(f"all_checks_passed: {schema_match and status_match and duration_match and all_count_matches and validated_answer_match and validated_confidence_match}")
     print(f"verdict: {diff_verdict.value}")
+    print(f"health: {diff_health}")
 
     created_at = diff["created_at"]
     print(f"created_at_a: {created_at['a']}")
@@ -212,6 +250,9 @@ def main() -> None:
         print("Comparison may still run, but results should be interpreted carefully.")
         print()
 
+    if args.json:
+        import json
+        print(json.dumps(diff_result, indent=2))
 
 if __name__ == "__main__":
     main()

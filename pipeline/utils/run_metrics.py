@@ -73,4 +73,5 @@ def derive_run_metrics(record: RunRecord) -> Dict[str, Any]:
         "failures_total": sum(failures_by_step.values()),
 
         "has_error": record.error is not None,
+        "validated_present": record.validated is not None
     }
