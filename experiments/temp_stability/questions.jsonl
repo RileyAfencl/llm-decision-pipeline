@@ -1,0 +1,50 @@
+{"question_id": "q001", "question": "Given a scenario where user engagement drops significantly, what metrics would you prioritize to diagnose the issue?"}
+{"question_id": "q002", "question": "Compare the tradeoffs between increasing model complexity for accuracy versus maintaining a simpler model for speed; which would you recommend?"}
+{"question_id": "q003", "question": "In a system where data privacy is paramount, what risks arise from using third-party APIs, and how would you mitigate them?"}
+{"question_id": "q004", "question": "Given incomplete logs of a system failure, what steps would you take to identify the root cause?"}
+{"question_id": "q005", "question": "Design a feedback loop for a machine learning model that operates under strict latency constraints; what elements are essential?"}
+{"question_id": "q006", "question": "What could go wrong in a deployment pipeline that lacks automated testing, and how would you monitor for these issues?"}
+{"question_id": "q007", "question": "Given a limited budget for cloud resources, how would you prioritize which services to scale up or down?"}
+{"question_id": "q008", "question": "In a scenario where user feedback is mixed, how would you decide which feature to develop next?"}
+{"question_id": "q009", "question": "Identify potential risks in a collaborative project where team members have conflicting priorities and suggest mitigations."}
+{"question_id": "q010", "question": "Given a model that performs well in training but poorly in production, what diagnostic steps would you take to uncover the issue?"}
+{"question_id": "q011", "question": "Compare the effectiveness of A/B testing versus user surveys for gathering insights on a new feature; which would you choose and why?"}
+{"question_id": "q012", "question": "In a scenario where data quality is inconsistent, what strategies would you implement to ensure reliable model training?"}
+{"question_id": "q013", "question": "What are the implications of deploying a model with known biases, and how would you address them in your deployment strategy?"}
+{"question_id": "q014", "question": "Given a scenario where system performance degrades over time, what monitoring strategies would you implement to catch this early?"}
+{"question_id": "q015", "question": "How would you prioritize feature requests from different stakeholders when they conflict with each other?"}
+{"question_id": "q016", "question": "In a project with tight deadlines, how would you balance the need for thorough testing against the pressure to deliver quickly?"}
+{"question_id": "q017", "question": "Identify risks associated with using outdated libraries in a production environment and propose ways to manage these risks."}
+{"question_id": "q018", "question": "Given a scenario where a model's predictions are consistently off, what steps would you take to recalibrate it?"}
+{"question_id": "q019", "question": "Compare the use of ensemble methods versus single models in terms of robustness; which approach would you advocate for and why?"}
+{"question_id": "q020", "question": "In a situation where user trust is low, what measures would you implement to rebuild confidence in your system?"}
+{"question_id": "q021", "question": "What could potentially go wrong if a model is trained on biased data, and how would you monitor for these issues post-deployment?"}
+{"question_id": "q022", "question": "Given a scenario where a model's performance varies by demographic, how would you approach addressing this disparity?"}
+{"question_id": "q023", "question": "Identify the risks of implementing a new feature without sufficient user testing and suggest ways to mitigate these risks."}
+{"question_id": "q024", "question": "How would you design a system to handle sudden spikes in user traffic while maintaining performance?"}
+{"question_id": "q025", "question": "In a scenario where multiple teams are working on overlapping features, how would you prioritize development efforts?"}
+{"question_id": "q026", "question": "What are the potential consequences of not having a rollback plan for a major system update, and how would you prepare for this?"}
+{"question_id": "q027", "question": "Given a scenario where user engagement is declining, what data sources would you analyze first to identify the cause?"}
+{"question_id": "q028", "question": "Compare the benefits and drawbacks of using open-source versus proprietary software in a critical system; which would you prefer and why?"}
+{"question_id": "q029", "question": "In a situation where a model is underperforming, how would you decide whether to retrain it or adjust its parameters?"}
+{"question_id": "q030", "question": "Identify the risks of relying solely on automated monitoring tools and suggest complementary strategies to enhance oversight."}
+{"question_id": "q031", "question": "What could go wrong if a system lacks proper documentation, and how would you address these potential issues?"}
+{"question_id": "q032", "question": "Given a scenario where user feedback is overwhelmingly negative, how would you prioritize changes to improve satisfaction?"}
+{"question_id": "q033", "question": "How would you balance the need for innovation with the necessity of maintaining system stability in a fast-paced environment?"}
+{"question_id": "q034", "question": "In a project with limited resources, how would you prioritize which features to develop first?"}
+{"question_id": "q035", "question": "What are the implications of deploying a model that has not been thoroughly validated, and how would you monitor its performance?"}
+{"question_id": "q036", "question": "Given a scenario where a model's output is inconsistent, what diagnostic steps would you take to identify the underlying issues?"}
+{"question_id": "q037", "question": "Compare the tradeoffs of using real-time data versus batch data processing in a time-sensitive application; which would you choose?"}
+{"question_id": "q038", "question": "In a situation where a system is experiencing frequent outages, what steps would you take to diagnose and resolve the root cause?"}
+{"question_id": "q039", "question": "Identify risks associated with deploying a new feature without adequate user testing and propose a mitigation strategy."}
+{"question_id": "q040", "question": "How would you approach the challenge of integrating legacy systems with modern applications while minimizing disruption?"}
+{"question_id": "q041", "question": "What could go wrong if a model is trained on a small dataset, and how would you monitor its performance post-deployment?"}
+{"question_id": "q042", "question": "Given a scenario where a model's predictions are not aligning with business goals, how would you recalibrate its objectives?"}
+{"question_id": "q043", "question": "In a project where team members have differing opinions on priorities, how would you facilitate a consensus?"}
+{"question_id": "q044", "question": "What are the potential risks of using a single point of failure in a system architecture, and how would you address them?"}
+{"question_id": "q045", "question": "Given a scenario where data is siloed across departments, how would you design a strategy to improve data accessibility?"}
+{"question_id": "q046", "question": "How would you prioritize security measures in a system that also requires high availability?"}
+{"question_id": "q047", "question": "What could go wrong if a model is not regularly updated, and how would you monitor for performance degradation?"}
+{"question_id": "q048", "question": "In a situation where user adoption is low, what strategies would you implement to encourage engagement?"}
+{"question_id": "q049", "question": "Identify the risks of implementing a new technology without a clear understanding of its implications and suggest mitigations."}
+{"question_id": "q050", "question": "Given a scenario where a system is underperforming, how would you prioritize troubleshooting efforts?"}
