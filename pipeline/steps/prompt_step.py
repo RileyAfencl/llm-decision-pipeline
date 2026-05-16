@@ -2,6 +2,7 @@ from __future__ import annotations
 from pipeline.steps.base import PipelineStep
 from pipeline.utils.retry import RetryConfig
 from pipeline.clients.llm_client import run_llm, SYSTEM_JSON_ANALYST
+from pipeline.config import get_temperature_profile
 
 
 class PromptStep(PipelineStep):
@@ -23,14 +24,17 @@ class PromptStep(PipelineStep):
     def run(self, input_data: dict) -> dict:
         question = input_data["question"]
         break_json = bool(input_data.get("break_json", False))
-                
+
+        profile = get_temperature_profile(input_data.get("temperature_profile"))
+            
         raw_output = run_llm(
             system_prompt=SYSTEM_JSON_ANALYST,
             user_prompt=question,
+            temperature=profile.prompt,
         )
         if break_json:
-         raw_output = f"Here is the answer:\n\n{raw_output}\n\nHope that helps!"
-         print("[debug] breaking JSON output")
+            raw_output = f"Here is the answer:\n\n{raw_output}\n\nHope that helps!"
+            print("[debug] breaking JSON output")
 
 
         return {

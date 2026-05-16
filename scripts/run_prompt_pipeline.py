@@ -39,7 +39,7 @@ def main() -> None:
     "break_json": break_json,
     }
 
-    initial_data = {"question": question, "break_json": break_json}
+    initial_data = {"question": question, "break_json": break_json,}
     steps = [
     PromptStep(),
     RepairJsonStep(),

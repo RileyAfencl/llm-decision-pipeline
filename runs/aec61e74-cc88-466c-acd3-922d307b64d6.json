@@ -1,0 +1,144 @@
+{
+  "attempted": [
+    "prompt#1",
+    "repair_json#1",
+    "score#1",
+    "grade#1",
+    "decide#1",
+    "choose_best#1",
+    "explain_decision#1"
+  ],
+  "created_at": "2026-05-15T23:30:45.926197+00:00",
+  "decision_events": [
+    {
+      "occurrence": 1,
+      "policy": "CompositePolicy",
+      "reason": "trace: DefaultPolicy=allow> SecondPassAfterReaskPolicy=allow",
+      "run": true,
+      "step": "prompt",
+      "step_index": 0
+    },
+    {
+      "occurrence": 1,
+      "policy": "CompositePolicy",
+      "reason": "trace: DefaultPolicy=allow> SecondPassAfterReaskPolicy=allow",
+      "run": true,
+      "step": "repair_json",
+      "step_index": 1
+    },
+    {
+      "occurrence": 1,
+      "policy": "CompositePolicy",
+      "reason": "trace: DefaultPolicy=allow> SecondPassAfterReaskPolicy=allow",
+      "run": true,
+      "step": "score",
+      "step_index": 2
+    },
+    {
+      "occurrence": 1,
+      "policy": "CompositePolicy",
+      "reason": "trace: DefaultPolicy=allow> SecondPassAfterReaskPolicy=allow",
+      "run": true,
+      "step": "grade",
+      "step_index": 3
+    },
+    {
+      "occurrence": 1,
+      "policy": "CompositePolicy",
+      "reason": "trace: DefaultPolicy=allow> SecondPassAfterReaskPolicy=allow",
+      "run": true,
+      "step": "decide",
+      "step_index": 4
+    },
+    {
+      "occurrence": 1,
+      "policy": "CompositePolicy",
+      "reason": "trace: DefaultPolicy=allow> SecondPassAfterReaskPolicy\u2717(reask blocked; action != 'reask')",
+      "run": false,
+      "step": "reask",
+      "step_index": 5
+    },
+    {
+      "occurrence": 2,
+      "policy": "CompositePolicy",
+      "reason": "trace: DefaultPolicy=allow> SecondPassAfterReaskPolicy\u2717(gated second pass; reasked == False)",
+      "run": false,
+      "step": "repair_json",
+      "step_index": 6
+    },
+    {
+      "occurrence": 2,
+      "policy": "CompositePolicy",
+      "reason": "trace: DefaultPolicy=allow> SecondPassAfterReaskPolicy\u2717(gated second pass; reasked == False)",
+      "run": false,
+      "step": "score",
+      "step_index": 7
+    },
+    {
+      "occurrence": 2,
+      "policy": "CompositePolicy",
+      "reason": "trace: DefaultPolicy=allow> SecondPassAfterReaskPolicy\u2717(gated second pass; reasked == False)",
+      "run": false,
+      "step": "grade",
+      "step_index": 8
+    },
+    {
+      "occurrence": 2,
+      "policy": "CompositePolicy",
+      "reason": "trace: DefaultPolicy=allow> SecondPassAfterReaskPolicy\u2717(gated second pass; reasked == False)",
+      "run": false,
+      "step": "decide",
+      "step_index": 9
+    },
+    {
+      "occurrence": 1,
+      "policy": "CompositePolicy",
+      "reason": "trace: DefaultPolicy=allow> SecondPassAfterReaskPolicy=allow",
+      "run": true,
+      "step": "choose_best",
+      "step_index": 10
+    },
+    {
+      "occurrence": 1,
+      "policy": "CompositePolicy",
+      "reason": "trace: DefaultPolicy=allow> SecondPassAfterReaskPolicy=allow",
+      "run": true,
+      "step": "explain_decision",
+      "step_index": 11
+    }
+  ],
+  "duration_ms": 3309,
+  "error": null,
+  "errored": [],
+  "failed": [],
+  "failure_events": [],
+  "finished_at": "2026-05-15T23:30:45.925427+00:00",
+  "inputs": {
+    "break_json": false,
+    "question": "Why is getting a job so hard"
+  },
+  "ran": [
+    "prompt#1",
+    "repair_json#1",
+    "score#1",
+    "grade#1",
+    "decide#1",
+    "choose_best#1",
+    "explain_decision#1"
+  ],
+  "run_id": "aec61e74-cc88-466c-acd3-922d307b64d6",
+  "skipped": [
+    "reask#1",
+    "repair_json#2",
+    "score#2",
+    "grade#2",
+    "decide#2"
+  ],
+  "started_at": "2026-05-15T23:30:42.616081+00:00",
+  "status": "success",
+  "summary_version": "v1",
+  "validated": {
+    "answer": "Getting a job can be challenging due to various factors such as high competition, lack of relevant experience or skills, economic conditions, and sometimes ineffective job search strategies. Additionally, networking and personal connections often play a significant role in the hiring process, which can disadvantage those without established networks.",
+    "confidence": 0.85
+  }
+}

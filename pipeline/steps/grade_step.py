@@ -7,6 +7,7 @@ from pipeline.clients.llm_client import (
     parse_json_strict,
     validate_grade_schema,
 )
+from pipeline.config import get_temperature_profile
 
 class GradeStep(PipelineStep):
     name = "grade"
@@ -26,10 +27,12 @@ class GradeStep(PipelineStep):
         question = input_data["question"]
         answer = input_data["validated"]["answer"]
 
+        profile = get_temperature_profile(input_data.get("temperature_profile"))
+
         raw = run_llm(
             system_prompt=SYSTEM_JSON_GRADER,
             user_prompt=f"Question:\n{question}\n\nAnswer:\n{answer}",
-            temperature=0.0,
+            temperature=profile.grade,
         )
 
         parsed = parse_json_strict(raw)
