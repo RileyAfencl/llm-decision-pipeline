@@ -9,6 +9,7 @@ from pipeline.clients.llm_client import (
     parse_json_strict,
     validate_answer_schema,
 )
+from pipeline.config import get_temperature_profile
 
 class RepairJsonStep(PipelineStep):
     name = "repair_json"
@@ -30,6 +31,8 @@ class RepairJsonStep(PipelineStep):
     def run(self, input_data: dict) -> dict:
         raw = input_data["raw_output"]
 
+        
+
         # If it's already valid, do nothing (idempotent step)
         try:
             parsed = parse_json_strict(raw)
@@ -38,10 +41,12 @@ class RepairJsonStep(PipelineStep):
         except (ValueError, TypeError):
             pass  # proceed to repair
 
+        profile = get_temperature_profile(input_data.get("temperature_profile"))
+        
         repaired_text = run_llm(
             system_prompt=SYSTEM_JSON_REPAIR,
             user_prompt=f"Fix this into valid JSON only:\n\n{raw}",
-            temperature=0.0,
+            temperature=profile.repair_json,
         )
 
         repaired_parsed: Dict[str, Any] = parse_json_strict(repaired_text)

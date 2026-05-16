@@ -2,12 +2,15 @@ from __future__ import annotations
 from pipeline.steps.base import PipelineStep
 from pipeline.utils.retry import RetryConfig
 from pipeline.clients.llm_client import run_llm, SYSTEM_JSON_ANALYST_REASK
+from pipeline.config import get_temperature_profile
 
 class ReaskStep(PipelineStep):
     name = "reask"
     reads = {"question", "action", "raw_output", "repaired", "validated", "score", "grade"}  # it checks action and reads question
     writes = {"reasked", "reask_count", "attempt1", "original_raw_output", "raw_output"}
     deletes = {"parsed", "validated", "score", "action", "grade", "repaired", "raw_output_repaired"}
+
+    
 
     retry_config = RetryConfig(
         attempts=4,
@@ -23,10 +26,12 @@ class ReaskStep(PipelineStep):
         reask_count = input_data.get("reask_count", 0) 
         question = input_data["question"]
 
+        profile = get_temperature_profile(input_data.get("temperature_profile"))
+
         raw2 = run_llm(
             system_prompt=SYSTEM_JSON_ANALYST_REASK,
             user_prompt=question,
-            temperature=0.2,
+            temperature=profile.reask,
         )
 
         attempt1 = {
