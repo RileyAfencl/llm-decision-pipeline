@@ -24,22 +24,22 @@ TEMPERATURE_PROFILES = {
         name="v1_low_temp",
         prompt=0.0,
         repair_json=0.0,
-        grade=0.0,
+        grade=0.2,
         reask=0.0,
     ),
     "v2_mid_temp": TemperatureProfile(
         name="v2_mid_temp",
         prompt=0.7,
         repair_json=0.3,
-        grade=0.0,
+        grade=0.7,
         reask=0.7,
     ),
     "v3_high_temp": TemperatureProfile(
         name="v3_high_temp",
-        prompt=1.3,
+        prompt=1.4,
         repair_json=0.6,
-        grade=0.0,
-        reask=1.3,
+        grade=1.4,
+        reask=1.4,
     ),
 }
 

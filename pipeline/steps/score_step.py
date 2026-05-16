@@ -10,9 +10,9 @@ class ScoreStep(PipelineStep):
         validated = input_data["validated"]
         conf = float(validated["confidence"])
 
-        if conf >= 0.85:
+        if conf >= 0.92:
             tier = "high"
-        elif conf >= 0.60:
+        elif conf >= 0.75:
             tier = "medium"
         else:
             tier = "low"
