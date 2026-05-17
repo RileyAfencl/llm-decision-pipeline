@@ -1,3 +1,15 @@
+openai>=1.0.0
+python-dotenv>=1.0.0
+fastapi>=0.110
+pydantic>=2
+httpx>=0.24
+pandas>=2.0
+streamlit>=1.35
+plotly>=5.20
+
+[api]
+fastapi>=0.110.0
+uvicorn>=0.27.0
 
 [dev]
 pytest
