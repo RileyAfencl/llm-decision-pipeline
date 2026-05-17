@@ -5,6 +5,13 @@ This project implements a production-style LLM pipeline with built-in evaluation
 
 The system is designed to reflect real-world AI engineering patterns, including structured orchestration, failure handling, and run-level diagnostics.
 
+## Live Demo
+
+**LLM Temperature Stability Dashboard**  
+https://llm-temperature-stabillity.streamlit.app/
+
+An interactive Streamlit dashboard that analyzes the effect of temperature settings on a schema-validated LLM pipeline across 300 controlled experimental runs.
+
 ## Core Capabilities
 
 - **Schema-enforced LLM outputs**  
